@@ -11,3 +11,8 @@
 *.lai
 *.la
 *.a
+
+# Directories
+build/
+lib/
+bin/
