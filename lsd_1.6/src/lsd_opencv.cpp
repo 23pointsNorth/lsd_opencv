@@ -56,15 +56,17 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     Mat angles;
     if (scale != 1)
     {
-        Mat scaled_img;
+        Mat scaled_img, gaussian_img;
         double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
         double prec = 3.0;
         unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
         int ksize = 1+2*h; // kernel size 
-        // create a Gaussian kernel
+        // Create a Gaussian kernel
         Mat kernel = getGaussianKernel(ksize, sigma, CV_64F);
-        // apply to the image
-        filter2D(image, scaled_img, image.depth(), kernel, Point(-1, -1));
+        // Apply to the image
+        filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
+        // Scale image to needed size
+        resize(gaussian_img, scaled_img, Size(), scale, scale);
         imshow("Gaussian image", scaled_img);
         ll_angle(scaled_img, rho, angles);
     }
