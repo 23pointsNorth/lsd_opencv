@@ -6,6 +6,7 @@
 #include "lsd_opencv.hpp"
 
 #include "opencv2/opencv.hpp"
+//core, imgproc
 
 // LSD parameters 
 #define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
@@ -44,8 +45,8 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<Point2f>& begi
 
 void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
 {
-    // CV_ASSERT(image.data != NULL);
-    // CV_ASSERT(scale > 0);
+    CV_Assert(image.data != NULL);
+    CV_Assert(scale > 0);
 
     // Angle tolerance
     double prec = M_PI * ANG_TH / 180.0;
@@ -56,8 +57,15 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     if (scale != 1)
     {
         Mat scaled_img;
+        double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
+        double prec = 3.0;
+        unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
+        int ksize = 1+2*h; // kernel size 
         // create a Gaussian kernel
+        Mat kernel = getGaussianKernel(ksize, sigma, CV_64F);
         // apply to the image
+        filter2D(image, scaled_img, image.depth(), kernel, Point(-1, -1));
+        imshow("Gaussian image", scaled_img);
         ll_angle(scaled_img, rho, angles);
     }
     else

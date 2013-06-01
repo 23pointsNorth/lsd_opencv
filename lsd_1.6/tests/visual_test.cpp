@@ -22,19 +22,18 @@ int main(int argc, char** argv)
 	std::string in = argv[1];
 
 	Mat image = imread(in, CV_LOAD_IMAGE_GRAYSCALE);
-
+	imshow("Input image", image);
+	
 	//
 	// LSD 1.6 test
 	//
 	LsdWrap lsd_old;
 	vector<seg> seg_old;
 	auto start = std::chrono::high_resolution_clock::now();
-	
 	lsd_old.lsdw(image, seg_old);
-	
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
 	std::cout << "lsd 1.6 \n \t" << seg_old.size() <<" line segments found. For " << duration << " ms." << std::endl;
-	
+
 	//
 	// OpenCV LSD
 	//
@@ -45,7 +44,7 @@ int main(int argc, char** argv)
 	lsd_cv.flsd(image, 0.8f, seg_cv);
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
 	std::cout << "OpenCV lsd \n \t" << seg_cv.size() <<" line segments found. For " << duration << " ms." << std::endl;
-
+		
 	//Copy new structure to old
 	vector<seg> seg_cvo(seg_cv.size());
 	for(unsigned int i = 0; i < seg_cvo.size(); ++i)
@@ -58,7 +57,7 @@ int main(int argc, char** argv)
 		seg_cvo[i].width = seg_cv[i].width;
 		seg_cvo[i].NFA = seg_cv[i].NFA;
 	}
-
+	
 	//
 	// Show difference
 	//
