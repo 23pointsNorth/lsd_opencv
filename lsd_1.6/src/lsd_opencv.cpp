@@ -30,10 +30,12 @@
 #define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
 
 // Label for pixels with undefined gradient. 
-#define NOTDEF -1024.0
+#define NOTDEF  -1024.0
 
 #define NOTUSED 0   // Label for pixels not used in yet. 
 #define USED    1   // Label for pixels already used in detection. 
+
+#define BIN_SIZE    1024
 
 using namespace cv;
 
@@ -53,7 +55,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     double p = ANG_TH / 180.0;
     double rho = QUANT / sin(prec);    // gradient magnitude threshold
 
-    Mat angles;
+    Mat angles, modgrad;
     if (scale != 1)
     {
         Mat scaled_img, gaussian_img;
@@ -68,16 +70,30 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
         // Scale image to needed size
         resize(gaussian_img, scaled_img, Size(), scale, scale);
         imshow("Gaussian image", scaled_img);
-        ll_angle(scaled_img, rho, angles);
+        ll_angle(scaled_img, rho, BIN_SIZE, angles, modgrad);
     }
     else
     {
-        ll_angle(image, rho, angles);
+        ll_angle(image, rho, BIN_SIZE, angles, modgrad);
     }
 
 }
 
-void LSD::ll_angle(const Mat& in, const double& threshold, Mat& angles)
+void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, cv::Mat& angles, cv::Mat& modgrad)
 {
+    angles = cv::Mat(in.size(), CV_64F); // Mat::zeros? to clean image
+    modgrad = cv::Mat(in.size(), CV_64F);
 
+    int width = in.cols;
+    int height = in.rows;
+
+    // Undefined the down and right boundaries 
+    cv::Mat w_ndf(1, width, CV_64F, NOTDEF);
+    cv::Mat h_ndf(height, 1, CV_64F, NOTDEF);
+    w_ndf.row(0).copyTo(angles.row(height - 1));
+    h_ndf.col(0).copyTo(angles.col(width -1));
+    
+    //Computing gradient for remaining pixels
+    
+    //imshow("Angles", angles);
 }
