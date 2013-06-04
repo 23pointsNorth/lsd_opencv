@@ -93,7 +93,64 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     w_ndf.row(0).copyTo(angles.row(height - 1));
     h_ndf.col(0).copyTo(angles.col(width -1));
     
-    //Computing gradient for remaining pixels
-    
+    /* Computing gradient for remaining pixels */
+    CV_Assert(in.isContinuous());   //Accessing image data linearly
+    double max_grad = 0.0;
+    for(int x = 0; x < width - 1; ++x)
+    {
+        for(int y = 0; y < height - 1; ++y)
+        {
+            /*
+                Norm 2 computation using 2x2 pixel window:
+                    A B
+                    C D
+                and
+                    DA = D-A,  BC = B-C.
+                Then
+                    gx = B+D - (A+C)   horizontal difference
+                    gy = C+D - (A+B)   vertical difference
+                DA and BC are just to avoid 2 additions.
+            */
+            int adr = y * width + x; 
+            double DA = in.data[adr + width + 1] - in.data[adr];
+            double BC = in.data[adr + 1] - in.data[adr + width];
+            double gx = DA + BC;    /* gradient x component */
+            double gy = DA - BC;    /* gradient y component */
+            double norm = std::sqrt((gx * gx + gy * gy)/4.0);   /* gradient norm */
+            
+            modgrad.data[adr] = norm;    /* store gradient*/
+
+            if (norm <= threshold)  /* norm too small, gradient no defined */
+            {
+                angles.data[adr] = NOTDEF;
+            }
+            else
+            {
+                angles.data[adr] = std::atan2(gx, -gy);   /* gradient angle computation */
+                if (norm > max_grad) { max_grad = norm; }
+            }
+
+        }
+    }
+    // std::cout << "Max grad: " << max_grad << std::endl;
+
+    /* Compute histogram of gradient values */
+    // SLOW! 
+    std::vector<std::vector<cv::Point> > range(n_bins);
+    for(int i=0; i< n_bins; ++i) {range[i].reserve(width*height/n_bins); }
+    for(int x = 0; x < width - 1; ++x)
+    {
+        for(int y = 0; y < height - 1; ++y)
+        {
+            double norm = modgrad.data[y * width + x];
+            /* store the point in the right bin according to its norm */
+            int i = (unsigned int) (norm * (double) n_bins / max_grad);
+            //if (i >= n_bins) { i = n_bins - 1; }
+            range[i].push_back(cv::Point(x, y));
+        }
+    }
+
+    Mat ordered(range);
+    std::cout << "Ordered: " << ordered << std::endl;
     //imshow("Angles", angles);
 }
