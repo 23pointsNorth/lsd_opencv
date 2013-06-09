@@ -55,8 +55,9 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     double prec = M_PI * ANG_TH / 180.0;
     double p = ANG_TH / 180.0;
     double rho = QUANT / sin(prec);    // gradient magnitude threshold
-
-    Mat angles, modgrad;
+ 
+    Mat angles(image.size(), CV_64F), modgrad(image.size(), CV_64F);
+    vector<coorlist*> list;
     if (scale != 1)
     {
         Mat scaled_img, gaussian_img;
@@ -71,16 +72,75 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
         // Scale image to needed size
         resize(gaussian_img, scaled_img, Size(), scale, scale);
         imshow("Gaussian image", scaled_img);
-        ll_angle(scaled_img, rho, BIN_SIZE, angles, modgrad);
+        ll_angle(scaled_img, rho, BIN_SIZE, angles, modgrad, list);
     }
     else
     {
-        ll_angle(image, rho, BIN_SIZE, angles, modgrad);
+        ll_angle(image, rho, BIN_SIZE, angles, modgrad, list);
     }
+ 
+    std::cout << "@CHECK: Angles >" << (double)angles.at<double>(0,0) << "<>" << 
+        (double)angles.data[0] << "<"<< std::endl; // should be <double>(x,y) not <uchar>
 
+    /* Number of Tests - NT
+        The theoretical number of tests is Np.(XY)^(5/2)
+        where X and Y are number of columns and rows of the image.
+        Np corresponds to the number of angle precisions considered.
+        As the procedure 'rect_improve' tests 5 times to halve the
+        angle precision, and 5 more times after improving other factors,
+        11 different precision values are potentially tested. Thus,
+        the number of tests is
+        11 * (X*Y)^(5/2)
+        whose logarithm value is
+        log10(11) + 5/2 * (log10(X) + log10(Y)).
+    */
+    int width = image.cols;
+    int height = image.rows; 
+    
+    double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
+    int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
+
+    Mat region = Mat::zeros(image.size(), CV_8UC1);
+    Mat used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
+    vector<cv::Point*> reg(width * height);
+
+    // std::cout << "Search." << std::endl;
+    // Search for line segments 
+    int ls_count = 0;
+    for(unsigned int i = 0; (i < list.size()) && list[i] != NULL; i++)
+    {
+        // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
+        int adx = list[i]->p.x + list[i]->p.y * width;
+        // std::cout << "adx " << adx << std::endl;
+        // std::cout << "Used: " << used.data[adx] << std::endl;
+        //if((used.data[adx] == NOTUSED) && (angles.data[adx] != NOTDEF))
+        if((used.data[adx] == NOTUSED) && (angles.data[adx] != NOTDEF))
+        {
+            // std::cout << "Inside for 2 " << std::endl;
+            int reg_size;
+            region_grow();
+            
+            // Ignore small regions
+            if(reg_size < min_reg_size) { continue; }
+
+            // Construct rectangular approximation for the region
+            region2rect();
+            if(!refine()) { continue; }
+
+            // Compute NFA
+            double log_nfa = rect_improve();
+            if(log_nfa <= LOG_EPS) { continue; }
+
+            // Found new line
+            ++ls_count;
+        }
+    
+    }
+ 
 }
 
-void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, cv::Mat& angles, cv::Mat& modgrad)
+void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, 
+                   cv::Mat& angles, cv::Mat& modgrad, std::vector<coorlist*>& list)
 {
     angles = cv::Mat(in.size(), CV_64F); // Mat::zeros? to clean image
     modgrad = cv::Mat(in.size(), CV_64F);
@@ -95,7 +155,7 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     h_ndf.col(0).copyTo(angles.col(width -1));
     
     /* Computing gradient for remaining pixels */
-    CV_Assert(in.isContinuous());   //Accessing image data linearly
+    CV_Assert(in.isContinuous());   // Accessing image data linearly
     double max_grad = 0.0;
     for(int x = 0; x < width - 1; ++x)
     {
@@ -151,7 +211,7 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     //     }
     // }
 
-    vector<coorlist> list(width * height);
+    list = vector<coorlist*>(width * height, new coorlist());
     vector<coorlist*> range_s(n_bins, NULL);
     vector<coorlist*> range_e(n_bins, NULL);
     int count = 0;
@@ -164,38 +224,70 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
             double norm = modgrad.data[y * width + x];
             /* store the point in the right bin according to its norm */
             int i = (unsigned int) (norm * bin_coef);
+            //std::cout << "before assignment" << std::endl;
             if(range_e[i] == NULL)
             {
-                range_e[i] = range_s[i] = &list[count];
+                // std::cout << "asdsad" << std::endl;
+                range_e[i] = range_s[i] = list[count];
                 ++count;
             }
             else
             {
-                range_e[i]->next = &list[count];
-                range_e[i] = &list[count];
+                range_e[i]->next = list[count];
+                range_e[i] = list[count];
                 ++count;
             }
+            //range_e[i] = new coorlist();
+            //std::cout << "after assignment" << std::endl;
             range_e[i]->p = cv::Point(x, y);
+            // std::cout << "between" << std::endl;
             range_e[i]->next = NULL;
+            // std::cout << "loop end" << std::endl;
+            
         }
     }
-    
+
+    // std::cout << "make list" << std::endl;
     // Sort
-    int i;
-    for(i = n_bins - 1; i > 0 && range_s[i] == NULL; i--);
-    coorlist* start = range_s[i];
-    coorlist* end = range_e[i];
+    int idx = n_bins - 1;
+    for(;idx > 0 && range_s[idx] == NULL; idx--);
+    coorlist* start = range_s[idx];
+    coorlist* end = range_e[idx];
     if(start != NULL)
     {
-        while(i > 0)
+        while(idx > 0)
         {
-            --i;
-            if(range_s[i] != NULL)
+            --idx;
+            if(range_s[idx] != NULL)
             {
-                end->next = range_s[i];
-                end = range_e[i];
+                end->next = range_s[idx];
+                end = range_e[idx];
             }
         }
     }
+
+    // std::cout << "End" << std::endl;
     //imshow("Angles", angles);
+}
+
+void LSD::region_grow()
+{
+
+}
+
+void LSD::region2rect()
+{
+
+}
+
+bool LSD::refine()
+{
+    // test return
+    return true;
+}
+
+double LSD::rect_improve()
+{
+    // test return
+    return LOG_EPS;
 }

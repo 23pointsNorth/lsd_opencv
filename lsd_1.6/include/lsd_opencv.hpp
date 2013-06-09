@@ -23,7 +23,7 @@ typedef struct lineSegment_s
 typedef struct coorlist_s
 {
   cv::Point p;
-  struct coorlist_s * next;
+  struct coorlist_s* next;
 } coorlist;
 
 
@@ -35,7 +35,11 @@ public:
     void flsd(const cv::Mat& image, const double& scale, std::vector<lineSegment>& lines, cv::Rect roi = cv::Rect());
 
 private:
-    void ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, cv::Mat& angles, cv::Mat& modgrad);
+    void ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, cv::Mat& angles, cv::Mat& modgrad, std::vector<coorlist*>& list);
+    void region_grow();
+    void region2rect();
+    bool refine();
+    double rect_improve();
 
 };
 
