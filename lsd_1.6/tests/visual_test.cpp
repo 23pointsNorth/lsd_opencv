@@ -31,6 +31,7 @@ int main(int argc, char** argv)
 	vector<seg> seg_old;
 	auto start = std::chrono::high_resolution_clock::now();
 	lsd_old.lsdw(image, seg_old);
+	//lsd_old.lsd_subdivided(image, seg_old, 3);
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
 	std::cout << "lsd 1.6 \n \t" << seg_old.size() <<" line segments found. For " << duration << " ms." << std::endl;
 

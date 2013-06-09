@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lsd_opencv.hpp"
 #include <opencv2/opencv.hpp>
 #include <chrono>
+
+#include "lsd_opencv.hpp"
 
 using namespace std;
 using namespace cv;

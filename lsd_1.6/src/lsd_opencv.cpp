@@ -3,6 +3,7 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
+
 #include "lsd_opencv.hpp"
 
 #include "opencv2/opencv.hpp"
@@ -30,7 +31,7 @@
 #define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
 
 // Label for pixels with undefined gradient. 
-#define NOTDEF  -1024.0
+#define NOTDEF  (double)-1024.0
 
 #define NOTUSED 0   // Label for pixels not used in yet. 
 #define USED    1   // Label for pixels already used in detection. 
@@ -135,22 +136,66 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     // std::cout << "Max grad: " << max_grad << std::endl;
 
     /* Compute histogram of gradient values */
-    // SLOW! 
-    std::vector<std::vector<cv::Point> > range(n_bins);
-    for(int i=0; i< n_bins; ++i) {range[i].reserve(width*height/n_bins); }
+    // // SLOW! 
+    // std::vector<std::vector<cv::Point> > range(n_bins);
+    // //for(int i = 0; i < n_bins; ++i) {range[i].reserve(width*height/n_bins); }
+    // double bin_coef = (double) n_bins / max_grad;
+    // for(int x = 0; x < width - 1; ++x)
+    // {
+    //     for(int y = 0; y < height - 1; ++y)
+    //     {
+    //         double norm = modgrad.data[y * width + x];
+    //         /* store the point in the right bin according to its norm */
+    //         int i = (unsigned int) (norm * bin_coef);
+    //         range[i].push_back(cv::Point(x, y));
+    //     }
+    // }
+
+    vector<coorlist> list(width * height);
+    vector<coorlist*> range_s(n_bins, NULL);
+    vector<coorlist*> range_e(n_bins, NULL);
+    int count = 0;
+    double bin_coef = (double) n_bins / max_grad;
+
     for(int x = 0; x < width - 1; ++x)
     {
         for(int y = 0; y < height - 1; ++y)
         {
             double norm = modgrad.data[y * width + x];
             /* store the point in the right bin according to its norm */
-            int i = (unsigned int) (norm * (double) n_bins / max_grad);
-            //if (i >= n_bins) { i = n_bins - 1; }
-            range[i].push_back(cv::Point(x, y));
+            int i = (unsigned int) (norm * bin_coef);
+            if(range_e[i] == NULL)
+            {
+                range_e[i] = range_s[i] = &list[count];
+                ++count;
+            }
+            else
+            {
+                range_e[i]->next = &list[count];
+                range_e[i] = &list[count];
+                ++count;
+            }
+            range_e[i]->p = cv::Point(x, y);
+            range_e[i]->next = NULL;
         }
     }
-
-    Mat ordered(range);
-    std::cout << "Ordered: " << ordered << std::endl;
+    
+    // Sort
+    int i;
+    for(i = n_bins - 1; i > 0 && range_s[i] == NULL; i--);
+    coorlist* start = range_s[i];
+    coorlist* end = range_e[i];
+    if(start != NULL)
+    {
+        while(i > 0)
+        {
+            --i;
+            if(range_s[i] != NULL)
+            {
+                end->next = range_s[i];
+                end = range_e[i];
+            }
+        }
+    }
     //imshow("Angles", angles);
 }

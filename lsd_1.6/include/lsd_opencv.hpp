@@ -20,6 +20,13 @@ typedef struct lineSegment_s
 } lineSegment;
 
 
+typedef struct coorlist_s
+{
+  cv::Point p;
+  struct coorlist_s * next;
+} coorlist;
+
+
 class LSD
 {
 public:
