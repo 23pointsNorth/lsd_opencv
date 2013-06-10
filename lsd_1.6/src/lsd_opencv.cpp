@@ -60,6 +60,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     vector<coorlist*> list;
     if (scale != 1)
     {
+        //TODO: Remove Gaussian blur, as scaling down applies.
         Mat scaled_img, gaussian_img;
         double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
         double prec = 3.0;
@@ -78,10 +79,13 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     {
         ll_angle(image, rho, BIN_SIZE, angles, modgrad, list);
     }
- 
-    std::cout << "@CHECK: Angles >" << (double)angles.at<double>(0,0) << "<>" << 
+    
+    double* q = (double*) angles.data;
+    //memcpy(&q, angles.data, sizeof(double));
+    std::cout << q[0] << std::endl;
+    std::cout << "@CHECK: Angles >" << (double)angles.at<unsigned char>(0,0) << "<>" << 
         (double)angles.data[0] << "<"<< std::endl; // should be <double>(x,y) not <uchar>
-
+    
     /* Number of Tests - NT
         The theoretical number of tests is Np.(XY)^(5/2)
         where X and Y are number of columns and rows of the image.
@@ -126,6 +130,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
             // Construct rectangular approximation for the region
             region2rect();
             if(!refine()) { continue; }
+            if(!refine()) { continue; }
 
             // Compute NFA
             double log_nfa = rect_improve();
@@ -133,6 +138,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
 
             // Found new line
             ++ls_count;
+
         }
     
     }
