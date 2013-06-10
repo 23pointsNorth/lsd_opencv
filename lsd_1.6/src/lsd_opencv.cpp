@@ -56,22 +56,24 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     double p = ANG_TH / 180.0;
     double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
-    Mat angles(image.size(), CV_64F), modgrad(image.size(), CV_64F);
+    Mat angles, modgrad;
     vector<coorlist*> list;
     if (scale != 1)
     {
         //TODO: Remove Gaussian blur, as scaling down applies.
-        Mat scaled_img, gaussian_img;
-        double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
-        double prec = 3.0;
-        unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
-        int ksize = 1+2*h; // kernel size 
-        // Create a Gaussian kernel
-        Mat kernel = getGaussianKernel(ksize, sigma, CV_64F);
-        // Apply to the image
-        filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
+        Mat scaled_img;
+        // Mat gaussian_img;
+        // double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
+        // double prec = 3.0;
+        // unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
+        // int ksize = 1+2*h; // kernel size 
+        // // Create a Gaussian kernel
+        // Mat kernel = getGaussianKernel(ksize, sigma, CV_64F);
+        // // Apply to the image
+        // filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
         // Scale image to needed size
-        resize(gaussian_img, scaled_img, Size(), scale, scale);
+        //resize(gaussian_img, scaled_img, Size(), scale, scale);
+        resize(image, scaled_img, Size(), scale, scale);
         imshow("Gaussian image", scaled_img);
         ll_angle(scaled_img, rho, BIN_SIZE, angles, modgrad, list);
     }
@@ -80,11 +82,12 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
         ll_angle(image, rho, BIN_SIZE, angles, modgrad, list);
     }
     
-    double* q = (double*) angles.data;
-    //memcpy(&q, angles.data, sizeof(double));
-    std::cout << q[0] << std::endl;
-    std::cout << "@CHECK: Angles >" << (double)angles.at<unsigned char>(0,0) << "<>" << 
-        (double)angles.data[0] << "<"<< std::endl; // should be <double>(x,y) not <uchar>
+    // double* q = (double*) angles.data;
+    // //memcpy(&q, angles.data, sizeof(double));
+    // std::cout << q[0] << std::endl;
+    // std::cout << "@CHECK: Angles >" << (double)angles.at<unsigned char>(0,0) << "<>" << 
+    //     (double)angles.data[0] << "<"<< std::endl; // should be <double>(x,y) not <uchar>
+    
     
     /* Number of Tests - NT
         The theoretical number of tests is Np.(XY)^(5/2)
@@ -107,6 +110,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
     Mat region = Mat::zeros(image.size(), CV_8UC1);
     Mat used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
     vector<cv::Point*> reg(width * height);
+    double* angles_data = (double*) angles.data;
 
     // std::cout << "Search." << std::endl;
     // Search for line segments 
@@ -118,7 +122,7 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
         // std::cout << "adx " << adx << std::endl;
         // std::cout << "Used: " << used.data[adx] << std::endl;
         //if((used.data[adx] == NOTUSED) && (angles.data[adx] != NOTDEF))
-        if((used.data[adx] == NOTUSED) && (angles.data[adx] != NOTDEF))
+        if((used.data[adx] == NOTUSED) && (angles_data[adx] != NOTDEF))
         {
             // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
@@ -150,6 +154,7 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
 {
     angles = cv::Mat(in.size(), CV_64F); // Mat::zeros? to clean image
     modgrad = cv::Mat(in.size(), CV_64F);
+    double* angles_data = (double*) angles.data;
 
     int width = in.cols;
     int height = in.rows;
@@ -189,11 +194,11 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
 
             if (norm <= threshold)  /* norm too small, gradient no defined */
             {
-                angles.data[adr] = NOTDEF;
+                angles_data[adr] = NOTDEF;
             }
             else
             {
-                angles.data[adr] = std::atan2(gx, -gy);   /* gradient angle computation */
+                angles_data[adr] = std::atan2(gx, -gy);   /* gradient angle computation */
                 if (norm > max_grad) { max_grad = norm; }
             }
 
