@@ -22,7 +22,7 @@ typedef struct lineSegment_s
 
 typedef struct coorlist_s
 {
-  cv::Point p;
+  cv::Point2i p;
   struct coorlist_s* next;
 } coorlist;
 
@@ -38,15 +38,16 @@ private:
     cv::Mat image;
     cv::Mat scaled_image;
     cv::Mat angles;
+    double *angles_data;
     cv::Mat modgrad;
     cv::Mat used;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
-    inline void region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, int& reg_size, double& reg_angle, double prec);
+    inline void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, int& reg_size, double& reg_angle, double& prec);
     inline void region2rect();
     inline bool refine();
     inline double rect_improve();
-
+    inline bool isAligned(const int& address, const double& theta, const double& prec);
 };
 
 #endif /* !LSD_OPENCV_H_ */

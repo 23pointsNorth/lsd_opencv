@@ -12,7 +12,7 @@ SET(LIBRARY_TYPE STATIC)
 # c++11 for chrono 
 # -no-write-strings to remove deprecated conversion for the c-code.
 # -pg for profiling the code. REMOVE WHEN DELIVERING  
-# -O3 optimization flag 
+# -O3 optimization flag  // + -ffast-math ?
 SET(CXX_COVERAGE_FLAGS	"-std=c++11 -Wno-write-strings -O3 -pg")
 SET(CXX_COVERAGE_LINK_FLAGS "")
 SET(CMAKE_CXX_FLAGS	"${CMAKE_CXX_FLAGS} ${CXX_COVERAGE_FLAGS}")

@@ -110,9 +110,8 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
 
     Mat region = Mat::zeros(image.size(), CV_8UC1);
     used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
-    vector<cv::Point2d> reg(width * height);
-    double* angles_data = (double*) angles.data;
-
+    vector<cv::Point2i> reg(width * height);
+    
     // std::cout << "Search." << std::endl;
     // Search for line segments 
     int ls_count = 0;
@@ -123,7 +122,6 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
         int adx = list[i]->p.x + list[i]->p.y * width;
         // std::cout << "adx " << adx << std::endl;
         // std::cout << "Used: " << used.data[adx] << std::endl;
-        //if((used.data[adx] == NOTUSED) && (angles.data[adx] != NOTDEF))
         if((used.data[adx] == NOTUSED) && (angles_data[adx] != NOTDEF))
         {
             // std::cout << "Inside for 2 " << std::endl;
@@ -155,7 +153,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
 {
     angles = cv::Mat(scaled_image.size(), CV_64F); // Mat::zeros? to clean image
     modgrad = cv::Mat(scaled_image.size(), CV_64F);
-    double* angles_data = (double*) angles.data;
+    angles_data = (double*) angles.data;
 
     int width = scaled_image.cols;
     int height = scaled_image.rows;
@@ -282,12 +280,43 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     //imshow("Angles", angles);
 }
 
-void LSD::region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, 
-                      int& reg_size, double& reg_angle, double prec)
+void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
+                      int& reg_size, double& reg_angle, double& prec)
 {
+    int width = angles.cols;
+    int height = angles.rows;
+
+    // Point to this region
     reg_size = 1;
     reg[0] = s;
+    int addr = s.x + s.y * width;
+    reg_angle = angles_data[addr];
+    double sumdx = cos(reg_angle);
+    double sumdy = sin(reg_angle);
+    used.data[addr] = USED;
 
+    //Try neighboring regions
+    for(int i=0; i<reg_size; ++i)
+        for(int xx = reg[i].x - 1; xx <= reg[i].x + 1; ++xx)
+            for(int yy = reg[i].y - 1; yy <= reg[i].y + 1; ++yy)
+            {
+                int c_addr = xx + yy * width;
+                if((xx >= 0 && yy>=0) && (xx < width && yy < height) &&
+                   (used.data[c_addr] != USED) &&
+                   (isAligned(c_addr, reg_angle, prec)))
+                {
+                    // Add point
+                    used.data[c_addr] = USED;
+                    reg[reg_size].x = xx;
+                    reg[reg_size].y = yy;
+                    ++reg_size;
+
+                    // Update region's angle
+                    sumdx += cos(angles_data[c_addr]);
+                    sumdy += sin(angles_data[c_addr]);
+                    reg_angle = atan2(sumdy, sumdx);
+                }
+            }
 }
 
 void LSD::region2rect()
@@ -305,4 +334,21 @@ double LSD::rect_improve()
 {
     // test return
     return LOG_EPS;
+}
+
+bool LSD::isAligned(const int& address, const double& theta, const double& prec)
+{
+    double a = angles_data[address];
+    if (a == NOTDEF) { return false; }
+
+    // It is assumed that 'theta' and 'a' are in the range [-pi,pi] 
+    double n_theta = theta - a;
+    if(n_theta < 0.0) { n_theta = -n_theta; }
+    if(n_theta > M_3_2_PI)
+    {
+        n_theta -= M_2__PI;
+        if( n_theta < 0.0 ) n_theta = -n_theta;
+    }
+
+    return n_theta <= prec;
 }
