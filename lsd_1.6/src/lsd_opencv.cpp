@@ -116,7 +116,8 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     // std::cout << "Search." << std::endl;
     // Search for line segments 
     int ls_count = 0;
-    for(unsigned int i = 0; (i < list.size()) && list[i] != NULL; i++)
+    unsigned int list_size = list.size();
+    for(unsigned int i = 0; (i < list_size) && list[i] != NULL; i++)
     {
         // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
         int adx = list[i]->p.x + list[i]->p.y * width;
@@ -128,7 +129,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
             // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
             double reg_angle;
-            //region_grow(list[i]->p, reg, reg_size, reg_angle, prec);
+            region_grow(list[i]->p, reg, reg_size, reg_angle, prec);
             
             // Ignore small regions
             if(reg_size < min_reg_size) { continue; }

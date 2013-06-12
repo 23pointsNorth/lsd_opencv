@@ -42,10 +42,10 @@ private:
     cv::Mat used;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
-    void region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, int& reg_size, double& reg_angle, double prec);
-    void region2rect();
-    bool refine();
-    double rect_improve();
+    inline void region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, int& reg_size, double& reg_angle, double prec);
+    inline void region2rect();
+    inline bool refine();
+    inline double rect_improve();
 
 };
 
