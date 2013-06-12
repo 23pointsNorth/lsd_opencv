@@ -40,13 +40,13 @@
 
 using namespace cv;
 
-void LSD::flsd(const Mat& image, const double& scale, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
+void LSD::flsd(const Mat& _image, const double& scale, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
     std::vector<double>& width, std::vector<double>& prec, std::vector<double>& nfa, Rect roi)
 {
     //call the other method,
 }
 
-void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
+void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
 {
     CV_Assert(image.data != NULL);
     CV_Assert(scale > 0);
@@ -126,14 +126,15 @@ void LSD::flsd(const Mat& image, const double& scale, std::vector<lineSegment>& 
         {
             // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
-            region_grow();
+            double reg_angle;
+            vector<cv::Point2d> reg(width * height);
+            region_grow(list[i]->p, angles_data, reg, reg_size, reg_angle, used, prec);
             
             // Ignore small regions
             if(reg_size < min_reg_size) { continue; }
 
             // Construct rectangular approximation for the region
             region2rect();
-            if(!refine()) { continue; }
             if(!refine()) { continue; }
 
             // Compute NFA
@@ -281,9 +282,11 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     //imshow("Angles", angles);
 }
 
-void LSD::region_grow()
+void LSD::region_grow(const cv::Point2d& s, double*& angles_data, std::vector<cv::Point2d>& reg, 
+                      int& reg_size, double& reg_angle, cv::Mat& used, double prec)
 {
-
+    reg_size = 1;
+    reg[0] = s;
 }
 
 void LSD::region2rect()
