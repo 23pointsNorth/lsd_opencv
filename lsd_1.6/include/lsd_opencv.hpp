@@ -36,11 +36,13 @@ public:
 
 private:
     cv::Mat image;
+    cv::Mat scaled_image;
     cv::Mat angles;
     cv::Mat modgrad;
-    
-    void ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, cv::Mat& angles, cv::Mat& modgrad, std::vector<coorlist*>& list);
-    void region_grow(const cv::Point2d& s, double*& angles_data, std::vector<cv::Point2d>& reg, int& reg_size, double& reg_angle, cv::Mat& used, double prec);
+    cv::Mat used;
+
+    void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
+    void region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, int& reg_size, double& reg_angle, double prec);
     void region2rect();
     bool refine();
     double rect_improve();

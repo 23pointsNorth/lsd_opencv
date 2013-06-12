@@ -48,20 +48,20 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<Point2f>& beg
 
 void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
 {
-    CV_Assert(image.data != NULL);
+    CV_Assert(_image.data != NULL);
     CV_Assert(scale > 0);
+
+    image = _image;
 
     // Angle tolerance
     double prec = M_PI * ANG_TH / 180.0;
     double p = ANG_TH / 180.0;
     double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
-    Mat angles, modgrad;
     vector<coorlist*> list;
     if (scale != 1)
     {
         //TODO: Remove Gaussian blur, as scaling down applies.
-        Mat scaled_img;
         // Mat gaussian_img;
         // double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
         // double prec = 3.0;
@@ -73,13 +73,14 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
         // filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
         // Scale image to needed size
         //resize(gaussian_img, scaled_img, Size(), scale, scale);
-        resize(image, scaled_img, Size(), scale, scale);
-        imshow("Gaussian image", scaled_img);
-        ll_angle(scaled_img, rho, BIN_SIZE, angles, modgrad, list);
+        resize(image, scaled_image, Size(), scale, scale);
+        imshow("Gaussian image", scaled_image);
+        ll_angle(rho, BIN_SIZE, list);
     }
     else
     {
-        ll_angle(image, rho, BIN_SIZE, angles, modgrad, list);
+        scaled_image = image;
+        ll_angle(rho, BIN_SIZE, list);
     }
     
     // double* q = (double*) angles.data;
@@ -108,8 +109,8 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
 
     Mat region = Mat::zeros(image.size(), CV_8UC1);
-    Mat used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
-    vector<cv::Point*> reg(width * height);
+    used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
+    vector<cv::Point2d> reg(width * height);
     double* angles_data = (double*) angles.data;
 
     // std::cout << "Search." << std::endl;
@@ -127,8 +128,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
             // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
             double reg_angle;
-            vector<cv::Point2d> reg(width * height);
-            region_grow(list[i]->p, angles_data, reg, reg_size, reg_angle, used, prec);
+            //region_grow(list[i]->p, reg, reg_size, reg_angle, prec);
             
             // Ignore small regions
             if(reg_size < min_reg_size) { continue; }
@@ -150,15 +150,14 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
  
 }
 
-void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned int& n_bins, 
-                   cv::Mat& angles, cv::Mat& modgrad, std::vector<coorlist*>& list)
+void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list)
 {
-    angles = cv::Mat(in.size(), CV_64F); // Mat::zeros? to clean image
-    modgrad = cv::Mat(in.size(), CV_64F);
+    angles = cv::Mat(scaled_image.size(), CV_64F); // Mat::zeros? to clean image
+    modgrad = cv::Mat(scaled_image.size(), CV_64F);
     double* angles_data = (double*) angles.data;
 
-    int width = in.cols;
-    int height = in.rows;
+    int width = scaled_image.cols;
+    int height = scaled_image.rows;
 
     // Undefined the down and right boundaries 
     cv::Mat w_ndf(1, width, CV_64F, NOTDEF);
@@ -167,7 +166,7 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     h_ndf.col(0).copyTo(angles.col(width -1));
     
     /* Computing gradient for remaining pixels */
-    CV_Assert(in.isContinuous());   // Accessing image data linearly
+    CV_Assert(scaled_image.isContinuous());   // Accessing image data linearly
     double max_grad = 0.0;
     for(int x = 0; x < width - 1; ++x)
     {
@@ -185,8 +184,8 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
                 DA and BC are just to avoid 2 additions.
             */
             int adr = y * width + x; 
-            double DA = in.data[adr + width + 1] - in.data[adr];
-            double BC = in.data[adr + 1] - in.data[adr + width];
+            double DA = scaled_image.data[adr + width + 1] - scaled_image.data[adr];
+            double BC = scaled_image.data[adr + 1] - scaled_image.data[adr + width];
             double gx = DA + BC;    /* gradient x component */
             double gy = DA - BC;    /* gradient y component */
             double norm = std::sqrt((gx * gx + gy * gy)/4.0);   /* gradient norm */
@@ -282,11 +281,12 @@ void LSD::ll_angle(const cv::Mat& in, const double& threshold, const unsigned in
     //imshow("Angles", angles);
 }
 
-void LSD::region_grow(const cv::Point2d& s, double*& angles_data, std::vector<cv::Point2d>& reg, 
-                      int& reg_size, double& reg_angle, cv::Mat& used, double prec)
+void LSD::region_grow(const cv::Point2d& s, std::vector<cv::Point2d>& reg, 
+                      int& reg_size, double& reg_angle, double prec)
 {
     reg_size = 1;
     reg[0] = s;
+
 }
 
 void LSD::region2rect()
