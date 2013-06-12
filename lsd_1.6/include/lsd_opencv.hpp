@@ -10,6 +10,38 @@
 
 #include <opencv2/core/core.hpp>
 
+// LSD parameters 
+#define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
+#define QUANT       2.0    // Bound to the quantization error on the gradient norm. 
+#define ANG_TH      22.5   // Gradient angle tolerance in degrees.
+#define LOG_EPS     0.0    // Detection threshold: -log10(NFA) > log_eps
+#define DENSITY_TH  0.7    // Minimal density of region points in rectangle.
+#define N_BINS      1024   // Number of bins in pseudo-ordering of gradient modulus.
+
+// Other constants
+// ln(10) 
+#ifndef M_LN10
+#define M_LN10      2.30258509299404568402
+#endif // !M_LN10
+
+// PI 
+#ifndef M_PI
+#define M_PI        CV_PI           // 3.14159265358979323846 
+#endif
+#define M_3_2_PI    (3*CV_PI) / 2   // 4.71238898038  // 3/2 pi 
+#define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
+
+// Label for pixels with undefined gradient. 
+#define NOTDEF      (double)-1024.0
+
+#define NOTUSED     0   // Label for pixels not used in yet. 
+#define USED        1   // Label for pixels already used in detection. 
+
+#define BIN_SIZE    1024
+
+#define RELATIVE_ERROR_FACTOR 100.0
+
+
 typedef struct lineSegment_s
 {
     cv::Point2f begin;
@@ -26,6 +58,16 @@ typedef struct coorlist_s
   struct coorlist_s* next;
 } coorlist;
 
+typedef struct rect_s
+{
+  cv::Point2f p1, p2;  /* first and second point of the line segment */
+  double width;        /* rectangle width */
+  cv::Point2f center;  /* center of the rectangle */
+  double theta;        /* angle */
+  double dx,dy;        /* (dx,dy) is vector oriented as the line segment */
+  double prec;         /* tolerance angle */
+  double p;            /* probability of a point with angle within 'prec' */
+} rect;
 
 class LSD
 {
@@ -43,11 +85,14 @@ private:
     cv::Mat used;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
-    inline void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, int& reg_size, double& reg_angle, double& prec);
-    inline void region2rect();
-    inline bool refine();
-    inline double rect_improve();
+    void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, int& reg_size, double& reg_angle, double& prec);
+    void region2rect();
+    bool refine();
+    double rect_improve();
     inline bool isAligned(const int& address, const double& theta, const double& prec);
+    inline double angle_diff(const double& a, const double& b);
+    inline double angle_diff_signed(const double& a, const double& b);
+    inline bool double_equal(const double& a, const double& b);
 };
 
 #endif /* !LSD_OPENCV_H_ */

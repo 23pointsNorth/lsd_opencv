@@ -9,35 +9,6 @@
 #include "opencv2/opencv.hpp"
 //core, imgproc
 
-// LSD parameters 
-#define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
-#define QUANT       2.0    // Bound to the quantization error on the gradient norm. 
-#define ANG_TH      22.5   // Gradient angle tolerance in degrees.
-#define LOG_EPS     0.0    // Detection threshold: -log10(NFA) > log_eps
-#define DENSITY_TH  0.7    // Minimal density of region points in rectangle.
-#define N_BINS      1024   // Number of bins in pseudo-ordering of gradient modulus.
-
-// Other constants
-// ln(10) 
-#ifndef M_LN10
-#define M_LN10 2.30258509299404568402
-#endif // !M_LN10
-
-// PI 
-#ifndef M_PI
-#define M_PI        CV_PI           // 3.14159265358979323846 
-#endif
-#define M_3_2_PI    (3*CV_PI) / 2   // 4.71238898038  // 3/2 pi 
-#define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
-
-// Label for pixels with undefined gradient. 
-#define NOTDEF  (double)-1024.0
-
-#define NOTUSED 0   // Label for pixels not used in yet. 
-#define USED    1   // Label for pixels already used in detection. 
-
-#define BIN_SIZE    1024
-
 using namespace cv;
 
 void LSD::flsd(const Mat& _image, const double& scale, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
@@ -351,4 +322,39 @@ bool LSD::isAligned(const int& address, const double& theta, const double& prec)
     }
 
     return n_theta <= prec;
+}
+
+// Absolute value angle difference 
+double LSD::angle_diff(const double& a, const double& b)
+{
+    double diff = a - b;
+    while(diff <= -M_PI) diff += M_2__PI;
+    while(diff >   M_PI) diff -= M_2__PI;
+    if(diff < 0.0) diff = -diff;
+    return diff;
+}
+
+// Signed angle difference 
+double LSD::angle_diff_signed(const double& a, const double& b)
+{
+    double diff = a - b;
+    while(diff <= -M_PI) diff += M_2__PI;
+    while(diff >   M_PI) diff -= M_2__PI;
+    return diff;
+}
+
+// Compare doubles by relative error.
+bool LSD::double_equal(const double& a, const double& b)
+{
+    // trivial case
+    if(a == b) return true;
+
+    double abs_diff = fabs(a - b);
+    double aa = fabs(a);
+    double bb = fabs(b);
+    double abs_max = (aa > bb)? aa : bb;
+
+    if(abs_max < DBL_MIN) abs_max = DBL_MIN;
+
+    return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
