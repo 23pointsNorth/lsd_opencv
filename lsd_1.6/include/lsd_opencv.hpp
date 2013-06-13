@@ -60,21 +60,24 @@ typedef struct coorlist_s
 
 typedef struct rect_s
 {
-  cv::Point2f p1, p2;  /* first and second point of the line segment */
-  double width;        /* rectangle width */
-  cv::Point2f center;  /* center of the rectangle */
-  double theta;        /* angle */
-  double dx,dy;        /* (dx,dy) is vector oriented as the line segment */
-  double prec;         /* tolerance angle */
-  double p;            /* probability of a point with angle within 'prec' */
+  double x1, y1, x2, y2;    /* first and second point of the line segment */
+  double width;             /* rectangle width */
+  double x, y;            /* center of the rectangle */
+  double theta;             /* angle */
+  double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
+  double prec;              /* tolerance angle */
+  double p;                 /* probability of a point with angle within 'prec' */
 } rect;
 
 class LSD
 {
 public:
-    void flsd(const cv::Mat& _image, const double& scale, std::vector<cv::Point2f>& begin, std::vector<cv::Point2f>& end, 
-        std::vector<double>& width, std::vector<double>& prec, std::vector<double>& nfa, cv::Rect roi = cv::Rect());
-    void flsd(const cv::Mat& _image, const double& scale, std::vector<lineSegment>& lines, cv::Rect roi = cv::Rect());
+    void flsd(const cv::Mat& _image, const double& scale, 
+              std::vector<cv::Point2f>& begin, std::vector<cv::Point2f>& end, 
+              std::vector<double>& width, std::vector<double>& prec, 
+              std::vector<double>& nfa, cv::Rect roi = cv::Rect());
+    void flsd(const cv::Mat& _image, const double& scale, std::vector<lineSegment>& lines, 
+              cv::Rect roi = cv::Rect());
 
 private:
     cv::Mat image;
@@ -82,17 +85,22 @@ private:
     cv::Mat angles;
     double *angles_data;
     cv::Mat modgrad;
+    double *modgrad_data;
     cv::Mat used;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
-    void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, int& reg_size, double& reg_angle, double& prec);
-    void region2rect();
+    void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
+                     int& reg_size, double& reg_angle, double& prec);
+    void region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
+                      const double& prec, const double& p, rect& rec);
     bool refine();
     double rect_improve();
     inline bool isAligned(const int& address, const double& theta, const double& prec);
     inline double angle_diff(const double& a, const double& b);
     inline double angle_diff_signed(const double& a, const double& b);
     inline bool double_equal(const double& a, const double& b);
+    double get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
+                     const double& y, const double& reg_angle, const double& prec);
 };
 
 #endif /* !LSD_OPENCV_H_ */

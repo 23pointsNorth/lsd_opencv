@@ -104,7 +104,8 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
             if(reg_size < min_reg_size) { continue; }
 
             // Construct rectangular approximation for the region
-            region2rect();
+            rect rec;
+            region2rect(reg, reg_size, reg_angle, prec, p, rec);
             if(!refine()) { continue; }
 
             // Compute NFA
@@ -125,6 +126,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     angles = cv::Mat(scaled_image.size(), CV_64F); // Mat::zeros? to clean image
     modgrad = cv::Mat(scaled_image.size(), CV_64F);
     angles_data = (double*) angles.data;
+    modgrad_data = (double*) modgrad.data;
 
     int width = scaled_image.cols;
     int height = scaled_image.rows;
@@ -290,9 +292,94 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
             }
 }
 
-void LSD::region2rect()
+void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
+                      const double& prec, const double& p, rect& rec)
 {
+    double x = 0, y = 0, sum = 0;
+    for(int i = 0; i < reg_size; ++i)
+    {
+        cv::Point2i p = reg[i];
+        double weight = modgrad_data[p.x + p.y * modgrad.cols];
+        x += (double)p.x * weight;
+        y += (double)p.y * weight;
+        sum += weight;
+    }
+    // Weighted sum must differ from 0
+    CV_Assert(sum <= 0);
+    
+    x /= sum;
+    y /= sum;
 
+    double theta = get_theta(reg, reg_size, x, y, reg_angle, prec);
+
+    // Find length and width
+    double dx = cos(theta);
+    double dy = sin(theta);
+    double l_min = 0, l_max = 0, w_min = 0, w_max = 0;
+
+    for(int i = 0; i < reg_size; ++i)
+    {
+        double regdx = (double)reg[i].x - x;
+        double regdy = (double)reg[i].y - y;
+        
+        double l = regdx * dx + regdy * dy;
+        double w = -regdx * dy + regdy * dx;
+
+        if(l > l_max) l_max = l;
+        if(l < l_min) l_min = l;
+        if(w > w_max) w_max = w;
+        if(w < w_min) w_min = w;
+    }
+
+    // Store values
+    rec.x1 = x + l_min * dx;
+    rec.y1 = y + l_min * dy;
+    rec.x2 = x + l_max * dx;
+    rec.y2 = y + l_max * dy;
+    rec.width = w_max - w_min;
+    rec.x = x;
+    rec.y = y;
+    rec.theta = theta;
+    rec.dx = dx;
+    rec.dy = dy;
+    rec.prec = prec;
+    rec.p = p;
+
+    // Min width of 1 pixel
+    if(rec.width < 1.0) rec.width = 1.0;
+}
+
+double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
+                      const double& y, const double& reg_angle, const double& prec)
+{
+    double Ixx = 0.0;
+    double Iyy = 0.0;
+    double Ixy = 0.0;
+
+    // compute inertia matrix 
+    for(int i = 0; i < reg_size; ++i)
+    {
+        double weight = modgrad_data[reg[i].x + reg[i].y * modgrad.cols];
+        double dx = (double)reg[i].x - x;
+        double dy = (double)reg[i].y - y;
+        Ixx += dy * dy * weight;
+        Iyy += dx * dx * weight;
+        Ixy -= dx * dy * weight;
+    }
+
+    // Check if inertia matrix is null
+    CV_Assert(double_equal(Ixx, 0) && double_equal(Iyy, 0) && double_equal(Ixy, 0));
+
+    // Compute smallest eigenvalue
+    double lambda = 0.5 * (Ixx + Iyy - sqrt((Ixx - Iyy) * (Ixx - Iyy) + 4.0 * Ixy * Ixy));
+
+    // compute angle
+    double theta = (fabs(Ixx)>fabs(Iyy))?atan2(lambda - Ixx, Ixy):atan2(Ixy, lambda - Iyy);
+
+    // Correct angle by 180 deg if necessary 
+    if(angle_diff(theta, reg_angle) > prec) { theta += M_PI; }
+
+    return theta;
 }
 
 bool LSD::refine()
