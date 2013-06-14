@@ -29,7 +29,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     double p = ANG_TH / 180.0;
     double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
-    vector<coorlist*> list;
+    vector<coorlist> list;
     if (scale != 1)
     {
         //TODO: Remove Gaussian blur, as scaling down applies.
@@ -87,10 +87,10 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     // Search for line segments 
     int ls_count = 0;
     unsigned int list_size = list.size();
-    for(unsigned int i = 0; (i < list_size) && list[i] != NULL; ++i)
+    for(unsigned int i = 0; i < list_size; ++i)
     {
         // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
-        int adx = list[i]->p.x + list[i]->p.y * width;
+        int adx = list[i].p.x + list[i].p.y * width;
         // std::cout << "adx " << adx << std::endl;
         // std::cout << "Used: " << used.data[adx] << std::endl;
         if((used.data[adx] == NOTUSED) && (angles_data[adx] != NOTDEF))
@@ -98,11 +98,12 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
             // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
             double reg_angle;
-            region_grow(list[i]->p, reg, reg_size, reg_angle, prec);
+            region_grow(list[i].p, reg, reg_size, reg_angle, prec);
             
             // Ignore small regions
             if(reg_size < min_reg_size) { continue; }
-
+            
+            //std::cout << "Region size: " << reg_size << std::endl;
             // Construct rectangular approximation for the region
             rect rec;
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
@@ -121,7 +122,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
  
 }
 
-void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list)
+void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list)
 {
     angles = cv::Mat(scaled_image.size(), CV_64FC1);
     modgrad = cv::Mat(scaled_image.size(), CV_64FC1);
@@ -196,7 +197,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     //     }
     // }
 
-    list = vector<coorlist*>(width * height, new coorlist());
+    list = vector<coorlist>(width * height);
     vector<coorlist*> range_s(n_bins, NULL);
     vector<coorlist*> range_e(n_bins, NULL);
     int count = 0;
@@ -213,13 +214,13 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             if(range_e[i] == NULL)
             {
                 // std::cout << "asdsad" << std::endl;
-                range_e[i] = range_s[i] = list[count];
+                range_e[i] = range_s[i] = &list[count];
                 ++count;
             }
             else
             {
-                range_e[i]->next = list[count];
-                range_e[i] = list[count];
+                range_e[i]->next = &list[count];
+                range_e[i] = &list[count];
                 ++count;
             }
             //range_e[i] = new coorlist();

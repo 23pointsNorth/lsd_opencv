@@ -89,7 +89,7 @@ private:
     double *modgrad_data;
     cv::Mat used;
 
-    void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list);
+    void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
                      int& reg_size, double& reg_angle, double& prec);
     void region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
