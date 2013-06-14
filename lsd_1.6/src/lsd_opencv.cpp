@@ -19,10 +19,10 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<Point2f>& beg
 
 void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
 {
-    CV_Assert(_image.data != NULL);
+    CV_Assert(_image.data != NULL && _image.channels() == 1);
     CV_Assert(scale > 0);
 
-    image = _image;
+    _image.convertTo(image, CV_64FC1);
 
     // Angle tolerance
     double prec = M_PI * ANG_TH / 180.0;
@@ -33,18 +33,18 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     if (scale != 1)
     {
         //TODO: Remove Gaussian blur, as scaling down applies.
-        // Mat gaussian_img;
-        // double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
-        // double prec = 3.0;
-        // unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
-        // int ksize = 1+2*h; // kernel size 
-        // // Create a Gaussian kernel
-        // Mat kernel = getGaussianKernel(ksize, sigma, CV_64F);
-        // // Apply to the image
-        // filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
+        Mat gaussian_img;
+        double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
+        double prec = 3.0;
+        unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
+        int ksize = 1+2*h; // kernel size 
+        // Create a Gaussian kernel
+        Mat kernel = getGaussianKernel(ksize, sigma, CV_64FC1);
+        // Apply to the image
+        filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
         // Scale image to needed size
-        //resize(gaussian_img, scaled_img, Size(), scale, scale);
-        resize(image, scaled_image, Size(), scale, scale);
+        resize(gaussian_img, scaled_image, Size(), scale, scale);
+        //resize(image, scaled_image, Size(), scale, scale);
         imshow("Gaussian image", scaled_image);
         ll_angle(rho, BIN_SIZE, list);
     }
@@ -73,21 +73,21 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
         whose logarithm value is
         log10(11) + 5/2 * (log10(X) + log10(Y)).
     */
-    int width = image.cols;
-    int height = image.rows; 
+    int width = scaled_image.cols;
+    int height = scaled_image.rows; 
     
     double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
     int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
 
-    Mat region = Mat::zeros(image.size(), CV_8UC1);
-    used = Mat::zeros(image.size(), CV_8UC1); // zeros = NOTUSED
+    Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
+    used = Mat::zeros(scaled_image.size(), CV_8UC1); // zeros = NOTUSED
     vector<cv::Point2i> reg(width * height);
     
     // std::cout << "Search." << std::endl;
     // Search for line segments 
     int ls_count = 0;
     unsigned int list_size = list.size();
-    for(unsigned int i = 0; (i < list_size) && list[i] != NULL; i++)
+    for(unsigned int i = 0; (i < list_size) && list[i] != NULL; ++i)
     {
         // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
         int adx = list[i]->p.x + list[i]->p.y * width;
@@ -123,17 +123,19 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
 
 void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist*>& list)
 {
-    angles = cv::Mat(scaled_image.size(), CV_64F); // Mat::zeros? to clean image
-    modgrad = cv::Mat(scaled_image.size(), CV_64F);
-    angles_data = (double*) angles.data;
-    modgrad_data = (double*) modgrad.data;
+    angles = cv::Mat(scaled_image.size(), CV_64FC1);
+    modgrad = cv::Mat(scaled_image.size(), CV_64FC1);
+    
+    angles_data = angles.ptr<double>(0);
+    modgrad_data = modgrad.ptr<double>(0);
+    scaled_image_data = scaled_image.ptr<double>(0);
 
     int width = scaled_image.cols;
     int height = scaled_image.rows;
 
     // Undefined the down and right boundaries 
-    cv::Mat w_ndf(1, width, CV_64F, NOTDEF);
-    cv::Mat h_ndf(height, 1, CV_64F, NOTDEF);
+    cv::Mat w_ndf(1, width, CV_64FC1, NOTDEF);
+    cv::Mat h_ndf(height, 1, CV_64FC1, NOTDEF);
     w_ndf.row(0).copyTo(angles.row(height - 1));
     h_ndf.col(0).copyTo(angles.col(width -1));
     
@@ -156,13 +158,13 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
                 DA and BC are just to avoid 2 additions.
             */
             int adr = y * width + x; 
-            double DA = scaled_image.data[adr + width + 1] - scaled_image.data[adr];
-            double BC = scaled_image.data[adr + 1] - scaled_image.data[adr + width];
+            double DA = scaled_image_data[adr + width + 1] - scaled_image_data[adr];
+            double BC = scaled_image_data[adr + 1] - scaled_image_data[adr + width];
             double gx = DA + BC;    /* gradient x component */
             double gy = DA - BC;    /* gradient y component */
             double norm = std::sqrt((gx * gx + gy * gy)/4.0);   /* gradient norm */
             
-            modgrad.data[adr] = norm;    /* store gradient*/
+            modgrad_data[adr] = norm;    /* store gradient*/
 
             if (norm <= threshold)  /* norm too small, gradient no defined */
             {
@@ -204,7 +206,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     {
         for(int y = 0; y < height - 1; ++y)
         {
-            double norm = modgrad.data[y * width + x];
+            double norm = modgrad_data[y * width + x];
             /* store the point in the right bin according to its norm */
             int i = (unsigned int) (norm * bin_coef);
             //std::cout << "before assignment" << std::endl;
@@ -305,7 +307,7 @@ void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, 
         sum += weight;
     }
     // Weighted sum must differ from 0
-    CV_Assert(sum <= 0);
+    CV_Assert(sum > 0);
     
     x /= sum;
     y /= sum;
@@ -368,7 +370,7 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     }
 
     // Check if inertia matrix is null
-    CV_Assert(double_equal(Ixx, 0) && double_equal(Iyy, 0) && double_equal(Ixy, 0));
+    CV_Assert(!(double_equal(Ixx, 0) && double_equal(Iyy, 0) && double_equal(Ixy, 0)));
 
     // Compute smallest eigenvalue
     double lambda = 0.5 * (Ixx + Iyy - sqrt((Ixx - Iyy) * (Ixx - Iyy) + 4.0 * Ixy * Ixy));

@@ -82,6 +82,7 @@ public:
 private:
     cv::Mat image;
     cv::Mat scaled_image;
+    double *scaled_image_data;
     cv::Mat angles;
     double *angles_data;
     cv::Mat modgrad;
