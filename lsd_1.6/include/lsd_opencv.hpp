@@ -49,7 +49,9 @@ typedef struct lineSegment_s
     double width;
     double p;
     double NFA;
-} lineSegment;
+    lineSegment_s(cv::Point2f _b, cv::Point2f _e, double _w, double _p, double _NFA)
+      : begin(_b), end(_e), width(_w), p(_p), NFA(_NFA) { }
+  } lineSegment;
 
 
 typedef struct coorlist_s

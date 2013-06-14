@@ -32,19 +32,19 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     vector<coorlist> list;
     if (scale != 1)
     {
-        //TODO: Remove Gaussian blur, as scaling down applies.
-        Mat gaussian_img;
-        double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
-        double prec = 3.0;
-        unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
-        int ksize = 1+2*h; // kernel size 
-        // Create a Gaussian kernel
-        Mat kernel = getGaussianKernel(ksize, sigma, CV_64FC1);
-        // Apply to the image
-        filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
-        // Scale image to needed size
-        resize(gaussian_img, scaled_image, Size(), scale, scale);
-        //resize(image, scaled_image, Size(), scale, scale);
+        // //TODO: Remove Gaussian blur, as scaling down applies.
+        // Mat gaussian_img;
+        // double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
+        // double prec = 3.0;
+        // unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
+        // int ksize = 1+2*h; // kernel size 
+        // // Create a Gaussian kernel
+        // Mat kernel = getGaussianKernel(ksize, sigma, CV_64FC1);
+        // // Apply to the image
+        // filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
+        // // Scale image to needed size
+        // resize(gaussian_img, scaled_image, Size(), scale, scale);
+        resize(image, scaled_image, Size(), scale, scale);
         imshow("Gaussian image", scaled_image);
         ll_angle(rho, BIN_SIZE, list);
     }
@@ -79,13 +79,14 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
     int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
 
+    // Initialize region only when needed
     Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
     used = Mat::zeros(scaled_image.size(), CV_8UC1); // zeros = NOTUSED
     vector<cv::Point2i> reg(width * height);
     
     // std::cout << "Search." << std::endl;
     // Search for line segments 
-    int ls_count = 0;
+    unsigned int ls_count = 0;
     unsigned int list_size = list.size();
     for(unsigned int i = 0; i < list_size; ++i)
     {
@@ -111,10 +112,35 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
 
             // Compute NFA
             double log_nfa = rect_improve();
-            if(log_nfa <= LOG_EPS) { continue; }
+            //if(log_nfa <= LOG_EPS) { continue; }
 
             // Found new line
             ++ls_count;
+
+            // Add the offset
+            rec.x1 += 0.5; rec.y1 += 0.5;
+            rec.x2 += 0.5; rec.y2 += 0.5;
+
+            // scale the result values if a sub-sampling was performed
+            if(scale != 1.0)
+            {
+                rec.x1 /= scale; rec.y1 /= scale;
+                rec.x2 /= scale; rec.y2 /= scale;
+                rec.width /= scale;
+            }
+            
+            lines.push_back(lineSegment(
+                Point(rec.x1, rec.y1), 
+                Point(rec.x2, rec.y2),
+                rec.width,
+                rec.p,
+                log_nfa));
+
+            //std::cout << "Lines size: " << lines.size() << std::endl;
+            for(unsigned int el = 0; el < reg_size; el++)
+            {
+                region.data[reg[i].x + reg[i].y * width] = ls_count;
+            }
 
         }
     
