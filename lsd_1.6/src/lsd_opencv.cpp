@@ -78,6 +78,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     
     double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
     int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
+    //std::cout << "Min region size: " << min_reg_size << std::endl;
 
     // Initialize region only when needed
     Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
@@ -91,7 +92,7 @@ void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>&
     for(unsigned int i = 0; i < list_size; ++i)
     {
         // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
-        int adx = list[i].p.x + list[i].p.y * width;
+        unsigned int adx = list[i].p.x + list[i].p.y * width;
         // std::cout << "adx " << adx << std::endl;
         // std::cout << "Used: " << used.data[adx] << std::endl;
         if((used.data[adx] == NOTUSED) && (angles_data[adx] != NOTDEF))
@@ -226,8 +227,8 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     list = vector<coorlist>(width * height);
     vector<coorlist*> range_s(n_bins, NULL);
     vector<coorlist*> range_e(n_bins, NULL);
-    int count = 0;
-    double bin_coef = (double) n_bins / max_grad;
+    unsigned int count = 0;
+    double bin_coef = (double) (n_bins - 1) / max_grad;
 
     for(int x = 0; x < width - 1; ++x)
     {
