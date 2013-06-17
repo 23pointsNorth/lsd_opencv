@@ -95,15 +95,15 @@ private:
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
                      int& reg_size, double& reg_angle, double& prec);
     void region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
-                      const double& prec, const double& p, rect& rec);
+                      const double& prec, const double& p, rect& rec) const;
     bool refine();
     double rect_improve();
-    inline bool isAligned(const int& address, const double& theta, const double& prec);
-    inline double angle_diff(const double& a, const double& b);
-    inline double angle_diff_signed(const double& a, const double& b);
-    inline bool double_equal(const double& a, const double& b);
+    bool isAligned(const int& address, const double& theta, const double& prec);
+    double angle_diff(const double& a, const double& b) const;
+    double angle_diff_signed(const double& a, const double& b) const;
+    bool double_equal(const double& a, const double& b) const;
     double get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
-                     const double& y, const double& reg_angle, const double& prec);
+                     const double& y, const double& reg_angle, const double& prec) const;
 };
 
 #endif /* !LSD_OPENCV_H_ */

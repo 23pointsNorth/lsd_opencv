@@ -323,7 +323,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
 }
 
 void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
-                      const double& prec, const double& p, rect& rec)
+                      const double& prec, const double& p, rect& rec) const
 {
     double x = 0, y = 0, sum = 0;
     for(int i = 0; i < reg_size; ++i)
@@ -380,7 +380,7 @@ void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, 
 }
 
 double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
-                      const double& y, const double& reg_angle, const double& prec)
+                      const double& y, const double& reg_angle, const double& prec) const
 {
     double Ixx = 0.0;
     double Iyy = 0.0;
@@ -424,7 +424,7 @@ double LSD::rect_improve()
     return LOG_EPS;
 }
 
-bool LSD::isAligned(const int& address, const double& theta, const double& prec)
+inline bool LSD::isAligned(const int& address, const double& theta, const double& prec)
 {
     double a = angles_data[address];
     if (a == NOTDEF) { return false; }
@@ -442,7 +442,7 @@ bool LSD::isAligned(const int& address, const double& theta, const double& prec)
 }
 
 // Absolute value angle difference 
-double LSD::angle_diff(const double& a, const double& b)
+inline double LSD::angle_diff(const double& a, const double& b) const
 {
     double diff = a - b;
     while(diff <= -M_PI) diff += M_2__PI;
@@ -452,7 +452,7 @@ double LSD::angle_diff(const double& a, const double& b)
 }
 
 // Signed angle difference 
-double LSD::angle_diff_signed(const double& a, const double& b)
+inline double LSD::angle_diff_signed(const double& a, const double& b) const
 {
     double diff = a - b;
     while(diff <= -M_PI) diff += M_2__PI;
@@ -461,7 +461,7 @@ double LSD::angle_diff_signed(const double& a, const double& b)
 }
 
 // Compare doubles by relative error.
-bool LSD::double_equal(const double& a, const double& b)
+inline bool LSD::double_equal(const double& a, const double& b) const
 {
     // trivial case
     if(a == b) return true;
