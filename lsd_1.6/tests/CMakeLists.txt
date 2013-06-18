@@ -8,3 +8,6 @@ find_package(OpenCV REQUIRED)
 
 add_executable(visual_test visual_test.cpp)
 target_link_libraries(visual_test lsd_opencv lsd_wrap ${OpenCV_LIBS})
+
+add_executable(houghlines_cmp houghlines.cpp)
+target_link_libraries(houghlines_cmp ${OpenCV_LIBS})
