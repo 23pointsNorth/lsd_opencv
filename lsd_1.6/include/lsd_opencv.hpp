@@ -89,14 +89,17 @@ private:
     double *angles_data;
     cv::Mat modgrad;
     double *modgrad_data;
-    cv::Mat used;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
-                     int& reg_size, double& reg_angle, double& prec);
-    void region2rect(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& reg_angle, 
-                      const double& prec, const double& p, rect& rec) const;
-    bool refine();
+                     int& reg_size, double& reg_angle, double& prec, cv::Mat& used);
+    void region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 
+                    const double prec, const double p, rect& rec) const;
+    bool refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
+                double prec, double p, rect& rec, const double& density_th, cv::Mat& used);
+    bool reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
+                double prec, double p, rect& rec, double density, const double& density_th, cv::Mat& used);
+    double dist(double x1, double y1, double x2, double y2);
     double rect_improve();
     bool isAligned(const int& address, const double& theta, const double& prec);
     double angle_diff(const double& a, const double& b) const;
