@@ -11,13 +11,31 @@
 
 using namespace cv;
 
-void LSD::flsd(const Mat& _image, const double& scale, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
+
+LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
+{
+    CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
+              _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
+              _n_bins > 0 && _subdivision > 0);
+    
+    scale = _scale;
+    doRefine = _refine;
+    subdivision = _subdivision;
+    SIGMA_SCALE = _sigma_scale;
+    QUANT = _quant;
+    ANG_TH = _ang_th;
+    LOG_EPS = _log_eps;
+    DENSITY_TH = _density_th;
+    N_BINS = _n_bins;
+}
+
+void LSD::flsd(const Mat& _image, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
     std::vector<double>& width, std::vector<double>& prec, std::vector<double>& nfa, Rect roi)
 {
     //call the other method,
 }
 
-void LSD::flsd(const Mat& _image, const double& scale, std::vector<lineSegment>& lines, Rect roi)
+void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
 {
     CV_Assert(_image.data != NULL && _image.channels() == 1);
     CV_Assert(scale > 0);

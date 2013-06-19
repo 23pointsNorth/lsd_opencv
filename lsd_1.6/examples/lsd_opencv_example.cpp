@@ -30,7 +30,7 @@ int main(void)
     auto start = std::chrono::high_resolution_clock::now();
     
 
-    ls.flsd(img3, 0.8f, begin, end, width, prec, nfa); 
+    ls.flsd(img3, begin, end, width, prec, nfa); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     
     std::cout << begin.size() <<" line segments found. For " << duration << " ms." << std::endl;

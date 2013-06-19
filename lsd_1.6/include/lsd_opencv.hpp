@@ -10,13 +10,13 @@
 
 #include <opencv2/core/core.hpp>
 
-// LSD parameters 
-#define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
-#define QUANT       2.0    // Bound to the quantization error on the gradient norm. 
-#define ANG_TH      22.5   // Gradient angle tolerance in degrees.
-#define LOG_EPS     0.0    // Detection threshold: -log10(NFA) > log_eps
-#define DENSITY_TH  0.7    // Minimal density of region points in rectangle.
-#define N_BINS      1024   // Number of bins in pseudo-ordering of gradient modulus.
+// // LSD parameters 
+// #define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
+// #define QUANT       2.0    // Bound to the quantization error on the gradient norm. 
+// #define ANG_TH      22.5   // Gradient angle tolerance in degrees.
+// #define LOG_EPS     0.0    // Detection threshold: -log10(NFA) > log_eps
+// #define DENSITY_TH  0.7    // Minimal density of region points in rectangle.
+// #define N_BINS      1024   // Number of bins in pseudo-ordering of gradient modulus.
 
 // Other constants
 // ln(10) 
@@ -74,11 +74,15 @@ typedef struct rect_s
 class LSD
 {
 public:
-    void flsd(const cv::Mat& _image, const double& scale, 
+    LSD(double _scale = 0.8, int _subdivision = 1, bool _refine = true, 
+        double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
+        double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
+
+    void flsd(const cv::Mat& _image,
               std::vector<cv::Point2f>& begin, std::vector<cv::Point2f>& end, 
               std::vector<double>& width, std::vector<double>& prec, 
               std::vector<double>& nfa, cv::Rect roi = cv::Rect());
-    void flsd(const cv::Mat& _image, const double& scale, std::vector<lineSegment>& lines, 
+    void flsd(const cv::Mat& _image, std::vector<lineSegment>& lines, 
               cv::Rect roi = cv::Rect());
 
 private:
@@ -89,6 +93,16 @@ private:
     double *angles_data;
     cv::Mat modgrad;
     double *modgrad_data;
+
+    double scale;
+    bool doRefine;
+    int subdivision;
+    double SIGMA_SCALE;
+    double QUANT;
+    double ANG_TH;
+    double LOG_EPS;
+    double DENSITY_TH;
+    int N_BINS;
 
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 

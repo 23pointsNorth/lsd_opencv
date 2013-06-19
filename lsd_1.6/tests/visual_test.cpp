@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	vector<lineSegment> seg_cv;
 	
 	start = std::chrono::high_resolution_clock::now();
-	lsd_cv.flsd(image, 0.8f, seg_cv);
+	lsd_cv.flsd(image, seg_cv);
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
 	std::cout << "OpenCV lsd \n \t" << seg_cv.size() <<" line segments found. For " << duration << " ms." << std::endl;
 		

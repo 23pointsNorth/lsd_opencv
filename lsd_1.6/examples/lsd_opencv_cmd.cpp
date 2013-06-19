@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 	std::vector<lineSegment> lines;  
 	LSD lsd;
     auto start = std::chrono::high_resolution_clock::now();
-    lsd.flsd(image, 0.8f, lines); 
+    lsd.flsd(image, lines); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     
     std::cout << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
