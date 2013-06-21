@@ -39,24 +39,22 @@ int main(int argc, char** argv)
 	// OpenCV LSD
 	//
 	LSD lsd_cv;
-	vector<lineSegment> seg_cv;
+	vector<Vec4i> lines;
 	
+    std::vector<double> width, prec, nfa;
 	start = std::chrono::high_resolution_clock::now();
-	lsd_cv.flsd(image, seg_cv);
+	lsd_cv.detect(image, lines);
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "OpenCV lsd \n \t" << seg_cv.size() <<" line segments found. For " << duration << " ms." << std::endl;
+	std::cout << "OpenCV lsd \n \t" << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
 		
 	//Copy new structure to old
-	vector<seg> seg_cvo(seg_cv.size());
+	vector<seg> seg_cvo(lines.size());
 	for(unsigned int i = 0; i < seg_cvo.size(); ++i)
 	{
-		seg_cvo[i].x1 = seg_cv[i].begin.x;
-		seg_cvo[i].y1 = seg_cv[i].begin.y;
-		seg_cvo[i].x2 = seg_cv[i].end.x;
-		seg_cvo[i].y2 = seg_cv[i].end.y;
-		seg_cvo[i].p = seg_cv[i].p;
-		seg_cvo[i].width = seg_cv[i].width;
-		seg_cvo[i].NFA = seg_cv[i].NFA;
+		seg_cvo[i].x1 = lines[i][0];
+		seg_cvo[i].y1 = lines[i][1];
+		seg_cvo[i].x2 = lines[i][2];
+		seg_cvo[i].y2 = lines[i][3];
 	}
 	
 	//

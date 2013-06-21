@@ -64,7 +64,7 @@ typedef struct rect_s
 {
   double x1, y1, x2, y2;    /* first and second point of the line segment */
   double width;             /* rectangle width */
-  double x, y;            /* center of the rectangle */
+  double x, y;              /* center of the rectangle */
   double theta;             /* angle */
   double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
   double prec;              /* tolerance angle */
@@ -78,12 +78,9 @@ public:
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
-    void flsd(const cv::Mat& _image,
-              std::vector<cv::Point2f>& begin, std::vector<cv::Point2f>& end, 
-              std::vector<double>& width, std::vector<double>& prec, 
-              std::vector<double>& nfa, cv::Rect roi = cv::Rect());
-    void flsd(const cv::Mat& _image, std::vector<lineSegment>& lines, 
-              cv::Rect roi = cv::Rect());
+    void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect roi = cv::Rect(),
+                cv::OutputArray& width = cv::noArray(), cv::OutputArray& prec = cv::noArray(),
+                cv::OutputArray& nfa = cv::noArray());
 
 private:
     cv::Mat image;
@@ -104,15 +101,19 @@ private:
     double DENSITY_TH;
     int N_BINS;
 
+    void flsd(const cv::Mat& _image,
+              std::vector<cv::Vec4i>& lines, 
+              std::vector<double>* widths, std::vector<double>* precisions, 
+              std::vector<double>* nfas);
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
-                     int& reg_size, double& reg_angle, double& prec, cv::Mat& used);
+                     int& reg_size, double& reg_angle, const double& prec, cv::Mat& used);
     void region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 
                     const double prec, const double p, rect& rec) const;
     bool refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
-                double prec, double p, rect& rec, const double& density_th, cv::Mat& used);
+                const double prec, double p, rect& rec, const double& density_th, cv::Mat& used);
     bool reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
-                double prec, double p, rect& rec, double density, const double& density_th, cv::Mat& used);
+                const double prec, double p, rect& rec, double density, const double& density_th, cv::Mat& used);
     double dist(double x1, double y1, double x2, double y2);
     double rect_improve();
     bool isAligned(const int& address, const double& theta, const double& prec);

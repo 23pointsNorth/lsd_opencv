@@ -29,23 +29,41 @@ LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, dou
     N_BINS = _n_bins;
 }
 
-void LSD::flsd(const Mat& _image, std::vector<Point2f>& begin, std::vector<Point2f>& end, 
-    std::vector<double>& width, std::vector<double>& prec, std::vector<double>& nfa, Rect roi)
+void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect roi,
+                cv::OutputArray& width, cv::OutputArray& prec,
+                cv::OutputArray& nfa)
 {
-    //call the other method,
+    Mat img = _image.getMat();
+    CV_Assert(img.data != NULL && img.channels() == 1);
+    // If default, then increase roi to fit whole image
+    if (roi.area() == 0)
+    {
+        roi = Rect(0, 0, img.cols, img.rows);
+    }
+
+    // Crop image to roi and convert it to the needed type. Store in image.
+    img(roi).convertTo(image, CV_64FC1);
+    std::vector<Vec4i> lines;
+    std::vector<double>* w = (width.needed())?(new std::vector<double>()):0;
+    std::vector<double>* p = (prec.needed())?(new std::vector<double>()):0;
+    std::vector<double>* n = (nfa.needed())?(new std::vector<double>()):0;
+
+    flsd(image, lines, w, p, n);
+
+    Mat(lines).copyTo(_lines);
+    if (w) Mat(*w).copyTo(width); 
+    if (p) Mat(*p).copyTo(prec);
+    if (n) Mat(*n).copyTo(nfa);
 }
 
-void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
+void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines, 
+    std::vector<double>* widths, std::vector<double>* precisions, 
+    std::vector<double>* nfas)
 {
-    CV_Assert(_image.data != NULL && _image.channels() == 1);
-    CV_Assert(scale > 0);
-
-    _image.convertTo(image, CV_64FC1);
-
     // Angle tolerance
-    double prec = M_PI * ANG_TH / 180.0;
-    double p = ANG_TH / 180.0;
-    double rho = QUANT / sin(prec);    // gradient magnitude threshold
+    const double prec = M_PI * ANG_TH / 180.0;
+    const double p = ANG_TH / 180.0;
+    const double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
     vector<coorlist> list;
     if (scale != 1)
@@ -72,34 +90,15 @@ void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
         ll_angle(rho, BIN_SIZE, list);
     }
     
-    // double* q = (double*) angles.data;
-    // //memcpy(&q, angles.data, sizeof(double));
-    // std::cout << q[0] << std::endl;
-    // std::cout << "@CHECK: Angles >" << (double)angles.at<unsigned char>(0,0) << "<>" << 
-    //     (double)angles.data[0] << "<"<< std::endl; // should be <double>(x,y) not <uchar>
-    
-    
-    /* Number of Tests - NT
-        The theoretical number of tests is Np.(XY)^(5/2)
-        where X and Y are number of columns and rows of the image.
-        Np corresponds to the number of angle precisions considered.
-        As the procedure 'rect_improve' tests 5 times to halve the
-        angle precision, and 5 more times after improving other factors,
-        11 different precision values are potentially tested. Thus,
-        the number of tests is
-        11 * (X*Y)^(5/2)
-        whose logarithm value is
-        log10(11) + 5/2 * (log10(X) + log10(Y)).
-    */
     int width = scaled_image.cols;
     int height = scaled_image.rows; 
     
-    double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
-    int min_reg_size = (int) (-logNT/log10(p)); /* minimal number of points in region that can give a meaningful event */
+    const double logNT = 5.0 * (log10((double)width) + log10((double)height)) / 2.0 + log10(11.0);
+    const int min_reg_size = (int) (-logNT/log10(p)); // minimal number of points in region that can give a meaningful event 
     //std::cout << "Min region size: " << min_reg_size << std::endl;
 
-    // Initialize region only when needed
-    Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
+    // // Initialize region only when needed
+    // Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
     Mat used = Mat::zeros(scaled_image.size(), CV_8UC1); // zeros = NOTUSED
     vector<cv::Point2i> reg(width * height);
     
@@ -109,7 +108,6 @@ void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
     unsigned int list_size = list.size();
     for(unsigned int i = 0; i < list_size; ++i)
     {
-        // std::cout << "Inside for 1: size " << list.size() << " image size: " << image.size() << std::endl;
         unsigned int adx = list[i].p.x + list[i].p.y * width;
         // std::cout << "adx " << adx << std::endl;
         // std::cout << "Used: " << used.data[adx] << std::endl;
@@ -123,16 +121,19 @@ void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
             // Ignore small regions
             if(reg_size < min_reg_size) { continue; }
             
-            //std::cout << "Region size: " << reg_size << std::endl;
             // Construct rectangular approximation for the region
             rect rec;
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
-            if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH, used)) { continue; }
+
+            if (doRefine)
+            {
+                if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH, used)) { continue; }
+            }
 
             // Compute NFA
             double log_nfa = rect_improve();
             //if(log_nfa <= LOG_EPS) { continue; }
-
+            
             // Found new line
             ++ls_count;
 
@@ -148,18 +149,17 @@ void LSD::flsd(const Mat& _image, std::vector<lineSegment>& lines, Rect roi)
                 rec.width /= scale;
             }
             
-            lines.push_back(lineSegment(
-                Point(rec.x1, rec.y1), 
-                Point(rec.x2, rec.y2),
-                rec.width,
-                rec.p,
-                log_nfa));
+            //Store the relevant data
+            lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
+            if (widths) widths->push_back(rec.width);
+            if (precisions) precisions->push_back(rec.p);
+            if (nfas) nfas->push_back(log_nfa);
 
-            //std::cout << "Lines size: " << lines.size() << std::endl;
-            for(unsigned int el = 0; el < reg_size; el++)
-            {
-                region.data[reg[i].x + reg[i].y * width] = ls_count;
-            }
+            // //Add the linesID to the region on the image
+            // for(unsigned int el = 0; el < reg_size; el++)
+            // {
+            //     region.data[reg[i].x + reg[i].y * width] = ls_count;
+            // }
 
         }
     
@@ -302,7 +302,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
 }
 
 void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
-                      int& reg_size, double& reg_angle, double& prec, cv::Mat& used)
+                      int& reg_size, double& reg_angle, const double& prec, cv::Mat& used)
 {
     int width = angles.cols;
     int height = angles.rows;
@@ -431,7 +431,7 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
 }
 
 bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
-                double prec, double p, rect& rec, const double& density_th, cv::Mat& used)
+                const double prec, double p, rect& rec, const double& density_th, cv::Mat& used)
 {
     double density = (double) reg_size / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
 
@@ -479,7 +479,7 @@ bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle,
 }
 
 bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
-                double prec, double p, rect& rec, double density, const double& density_th, cv::Mat& used)
+                const double prec, double p, rect& rec, double density, const double& density_th, cv::Mat& used)
 {
     //compute region's radius */
     double xc = (double) reg[0].x;

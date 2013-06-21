@@ -24,10 +24,12 @@ int main(int argc, char** argv)
 	Mat image = imread(in, CV_LOAD_IMAGE_GRAYSCALE);
 	
 	// LSD call 
-	std::vector<lineSegment> lines;  
+	std::vector<Vec4i> lines;
+    std::vector<double> width, prec, nfa;  
 	LSD lsd;
+
     auto start = std::chrono::high_resolution_clock::now();
-    lsd.flsd(image, lines); 
+    lsd.detect(image, lines, Rect(), width, prec, nfa); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     
     std::cout << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
@@ -37,10 +39,16 @@ int main(int argc, char** argv)
   	segfile.open(out);
     for (unsigned int i = 0; i < lines.size(); ++i)
     {
-        cout << '\t' << "B: "<< lines[i].begin << " E: " << lines[i].end << " W: " << lines[i].width 
-             << " P:" << lines[i].p << " NFA:" << lines[i].NFA << std::endl;
-		segfile << '\t' << "B: "<< lines[i].begin << " E: " << lines[i].end << " W: " << lines[i].width 
-             << " P:" << lines[i].p << " NFA:" << lines[i].NFA << std::endl;
+		cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1] 
+		<< " E: " << lines[i][2] << " " << lines[i][3]
+		<< " W: " << width[i] 
+		<< " P:" << prec[i] 
+		<< " NFA:" << nfa[i] << std::endl;
+		segfile << '\t' << "B: " << lines[i][0] << " " << lines[i][1] 
+		<< " E: " << lines[i][2] << " " << lines[i][3]
+		<< " W: " << width[i] 
+		<< " P:" << prec[i] 
+		<< " NFA:" << nfa[i] << std::endl;
     }
 	segfile.close();
 	
