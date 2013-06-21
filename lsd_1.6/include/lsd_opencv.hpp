@@ -32,7 +32,7 @@
 #define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
 
 // Label for pixels with undefined gradient. 
-#define NOTDEF      (double)-1024.0
+#define NOTDEF      double(-1024.0)
 
 #define NOTUSED     0   // Label for pixels not used in yet. 
 #define USED        1   // Label for pixels already used in detection. 
@@ -73,13 +73,13 @@ public:
 
 private:
     cv::Mat image;
-    cv::Mat scaled_image;
+    cv::Mat_<double> scaled_image;
     double *scaled_image_data;
-    cv::Mat angles;
+    cv::Mat_<double> angles;     // in radians 
     double *angles_data;
-    cv::Mat modgrad;
+    cv::Mat_<double> modgrad;
     double *modgrad_data;
-    cv::Mat used;
+    cv::Mat_<uchar> used;
 
     int img_width;
     int img_height;
@@ -94,14 +94,14 @@ private:
     const double DENSITY_TH;
     const int N_BINS;
 
-    void flsd(const cv::Mat& _image,
+    void flsd(const cv::Mat_<double>& _image,
               std::vector<cv::Vec4i>& lines, 
               std::vector<double>* widths, std::vector<double>* precisions, 
               std::vector<double>* nfas);
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
     void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
                      int& reg_size, double& reg_angle, const double& prec);
-    void region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 
+    void region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle,
                     const double prec, const double p, rect& rec) const;
     bool refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
                 const double prec, double p, rect& rec, const double& density_th);
@@ -118,4 +118,3 @@ private:
 };
 
 #endif /* !LSD_OPENCV_H_ */
-/*----------------------------------------------------------------------------*/

@@ -22,7 +22,7 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
                 cv::OutputArray& width, cv::OutputArray& prec,
                 cv::OutputArray& nfa)
 {
-    Mat img = _image.getMat();
+    Mat_<double> img = _image.getMat();
     CV_Assert(img.data && img.channels() == 1);
 
     // If default, then increase roi to fit whole image
@@ -33,6 +33,7 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
 
     // Crop image to roi and convert it to the needed type. Store in image.
     img(roi).convertTo(image, CV_64FC1);
+
     std::vector<Vec4i> lines;
     std::vector<double>* w = (width.needed())?(new std::vector<double>()):0;
     std::vector<double>* p = (prec.needed())?(new std::vector<double>()):0;
@@ -46,7 +47,7 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
     if (n) Mat(*n).copyTo(nfa);
 }
 
-void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines, 
+void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines, 
     std::vector<double>* widths, std::vector<double>* precisions, 
     std::vector<double>* nfas)
 {
@@ -81,7 +82,7 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
     
     // // Initialize region only when needed
     // Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
-    used = Mat::zeros(scaled_image.size(), CV_8UC1); // zeros = NOTUSED
+    used = Mat_<uchar>::zeros(scaled_image.size()); // zeros = NOTUSED
     vector<cv::Point2i> reg(img_width * img_height);
     
     // std::cout << "Search." << std::endl;
@@ -152,8 +153,8 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
 void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list)
 {
     //Initialize data
-    angles = cv::Mat(scaled_image.size(), CV_64FC1);
-    modgrad = cv::Mat(scaled_image.size(), CV_64FC1);
+    angles = cv::Mat_<double>(scaled_image.size());
+    modgrad = cv::Mat_<double>(scaled_image.size());
     
     angles_data = angles.ptr<double>(0);
     modgrad_data = modgrad.ptr<double>(0);
@@ -391,7 +392,7 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     // Compute smallest eigenvalue
     double lambda = 0.5 * (Ixx + Iyy - sqrt((Ixx - Iyy) * (Ixx - Iyy) + 4.0 * Ixy * Ixy));
 
-    // compute angle
+    // Compute angle
     double theta = (fabs(Ixx)>fabs(Iyy))?cv::fastAtan2(lambda - Ixx, Ixy):cv::fastAtan2(Ixy, lambda - Iyy); // in degs
     theta *= DEG_TO_RADS;
 
@@ -452,7 +453,7 @@ bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle,
 bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
                 const double prec, double p, rect& rec, double density, const double& density_th)
 {
-    //compute region's radius */
+    // Compute region's radius
     double xc = double(reg[0].x);
     double yc = double(reg[0].y);
     double rad1 = dist(xc, yc, rec.x1, rec.y1);
@@ -501,7 +502,7 @@ double LSD::rect_improve()
 
 inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
-    double a = angles_data[address];
+    const double& a = angles_data[address];
     if (a == NOTDEF) { return false; }
 
     // It is assumed that 'theta' and 'a' are in the range [-pi,pi] 
