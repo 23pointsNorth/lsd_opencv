@@ -282,25 +282,30 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
     //Try neighboring regions
     for(int i=0; i<reg_size; ++i)
         for(int xx = reg[i].x - 1; xx <= reg[i].x + 1; ++xx)
-            for(int yy = reg[i].y - 1; yy <= reg[i].y + 1; ++yy)
+        {
+            if (xx >= 0 && xx < img_width)
             {
-                int c_addr = xx + yy * img_width;
-                if((xx >= 0 && yy >= 0) && (xx < img_width && yy < img_height) &&
-                   (used.data[c_addr] != USED) &&
-                   (isAligned(c_addr, reg_angle, prec)))
+                for(int yy = reg[i].y - 1; yy <= reg[i].y + 1; ++yy)
                 {
-                    // Add point
-                    used.data[c_addr] = USED;
-                    reg[reg_size].x = xx;
-                    reg[reg_size].y = yy;
-                    ++reg_size;
+                    int c_addr = xx + yy * img_width;
+                    if((used.data[c_addr] != USED) &&
+                       (yy >= 0) && (yy < img_height) &&
+                       (isAligned(c_addr, reg_angle, prec)))
+                    {
+                        // Add point
+                        used.data[c_addr] = USED;
+                        reg[reg_size].x = xx;
+                        reg[reg_size].y = yy;
+                        ++reg_size;
 
-                    // Update region's angle
-                    sumdx += cos(angles_data[c_addr]);
-                    sumdy += sin(angles_data[c_addr]);
-                    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
+                        // Update region's angle
+                        sumdx += cos(angles_data[c_addr]);
+                        sumdy += sin(angles_data[c_addr]);
+                        reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
+                    }
                 }
             }
+        }
 }
 
 void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 
@@ -370,9 +375,11 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     // compute inertia matrix 
     for(int i = 0; i < reg_size; ++i)
     {
-        double weight = modgrad_data[reg[i].x + reg[i].y * modgrad.cols];
-        double dx = double(reg[i].x) - x;
-        double dy = double(reg[i].y) - y;
+        const double& regx = reg[i].x; 
+        const double& regy = reg[i].y;
+        double weight = modgrad_data[int(regx + regy * img_width)];
+        double dx = regx - x;
+        double dy = regy - y;
         Ixx += dy * dy * weight;
         Iyy += dx * dx * weight;
         Ixy -= dx * dy * weight;
@@ -387,7 +394,7 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     // compute angle
     double theta = (fabs(Ixx)>fabs(Iyy))?cv::fastAtan2(lambda - Ixx, Ixy):cv::fastAtan2(Ixy, lambda - Iyy); // in degs
     theta *= DEG_TO_RADS;
-    
+
     // Correct angle by 180 deg if necessary 
     if(angle_diff(theta, reg_angle) > prec) { theta += M_PI; }
 
