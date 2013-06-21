@@ -23,7 +23,7 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
                 cv::OutputArray& nfa)
 {
     Mat img = _image.getMat();
-    CV_Assert(img.data != NULL && img.channels() == 1);
+    CV_Assert(img.data && img.channels() == 1);
 
     // If default, then increase roi to fit whole image
     if (roi.area() == 0)
@@ -62,7 +62,7 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
         Mat gaussian_img;
         double sigma = (SCALE < 1.0)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
         double prec = 3.0;
-        unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
+        unsigned int h =  (unsigned int)(ceil(sigma * sqrt(2.0 * prec * log(10.0))));
         int ksize = 1+2*h; // kernel size 
         // Create a Gaussian kernel
         Mat kernel = getGaussianKernel(ksize, sigma, CV_64FC1);
@@ -80,8 +80,8 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
         ll_angle(rho, BIN_SIZE, list);
     }
 
-    const double logNT = 5.0 * (log10((double)img_width) + log10((double)img_height)) / 2.0 + log10(11.0);
-    const int min_reg_size = (int) (-logNT/log10(p)); // minimal number of points in region that can give a meaningful event 
+    const double logNT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);
+    const int min_reg_size = int(-logNT/log10(p)); // minimal number of points in region that can give a meaningful event 
     //std::cout << "Min region size: " << min_reg_size << std::endl;
 
     // // Initialize region only when needed
@@ -222,22 +222,20 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     // }
 
     list = vector<coorlist>(img_width * img_height);
-    vector<coorlist*> range_s(n_bins, NULL);
-    vector<coorlist*> range_e(n_bins, NULL);
+    vector<coorlist*> range_s(n_bins);
+    vector<coorlist*> range_e(n_bins);
     unsigned int count = 0;
-    double bin_coef = (double) (n_bins - 1) / max_grad;
+    double bin_coef = double(n_bins - 1) / max_grad;
 
     for(int x = 0; x < img_width - 1; ++x)
     {
         for(int y = 0; y < img_height - 1; ++y)
         {
             double norm = modgrad_data[y * img_width + x];
-            /* store the point in the right bin according to its norm */
-            int i = (unsigned int) (norm * bin_coef);
-            //std::cout << "before assignment" << std::endl;
-            if(range_e[i] == NULL)
+            // store the point in the right bin according to its norm 
+            int i = (unsigned int)(norm * bin_coef);
+            if(!range_e[i])
             {
-                // std::cout << "asdsad" << std::endl;
                 range_e[i] = range_s[i] = &list[count];
                 ++count;
             }
@@ -247,28 +245,22 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
                 range_e[i] = &list[count];
                 ++count;
             }
-            //range_e[i] = new coorlist();
-            //std::cout << "after assignment" << std::endl;
             range_e[i]->p = cv::Point(x, y);
-            // std::cout << "between" << std::endl;
-            range_e[i]->next = NULL;
-            // std::cout << "loop end" << std::endl;
-            
+            range_e[i]->next = 0;
         }
     }
 
-    // std::cout << "make list" << std::endl;
     // Sort
     int idx = n_bins - 1;
-    for(;idx > 0 && range_s[idx] == NULL; idx--);
+    for(;idx > 0 && !range_s[idx]; --idx);
     coorlist* start = range_s[idx];
     coorlist* end = range_e[idx];
-    if(start != NULL)
+    if(start)
     {
         while(idx > 0)
         {
             --idx;
-            if(range_s[idx] != NULL)
+            if(range_s[idx])
             {
                 end->next = range_s[idx];
                 end = range_e[idx];
@@ -298,7 +290,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
             for(int yy = reg[i].y - 1; yy <= reg[i].y + 1; ++yy)
             {
                 int c_addr = xx + yy * img_width;
-                if((xx >= 0 && yy>=0) && (xx < img_width && yy < img_height) &&
+                if((xx >= 0 && yy >= 0) && (xx < img_width && yy < img_height) &&
                    (used.data[c_addr] != USED) &&
                    (isAligned(c_addr, reg_angle, prec)))
                 {
@@ -322,10 +314,10 @@ void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, c
     double x = 0, y = 0, sum = 0;
     for(int i = 0; i < reg_size; ++i)
     {
-        cv::Point2i p = reg[i];
+        const cv::Point2i& p = reg[i];
         double weight = modgrad_data[p.x + p.y * modgrad.cols];
-        x += (double)p.x * weight;
-        y += (double)p.y * weight;
+        x += double(p.x) * weight;
+        y += double(p.y) * weight;
         sum += weight;
     }
     // Weighted sum must differ from 0
@@ -343,8 +335,8 @@ void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, c
 
     for(int i = 0; i < reg_size; ++i)
     {
-        double regdx = (double)reg[i].x - x;
-        double regdy = (double)reg[i].y - y;
+        double regdx = double(reg[i].x) - x;
+        double regdy = double(reg[i].y) - y;
         
         double l = regdx * dx + regdy * dy;
         double w = -regdx * dy + regdy * dx;
@@ -384,8 +376,8 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     for(int i = 0; i < reg_size; ++i)
     {
         double weight = modgrad_data[reg[i].x + reg[i].y * modgrad.cols];
-        double dx = (double)reg[i].x - x;
-        double dy = (double)reg[i].y - y;
+        double dx = double(reg[i].x) - x;
+        double dy = double(reg[i].y) - y;
         Ixx += dy * dy * weight;
         Iyy += dx * dx * weight;
         Ixy -= dx * dy * weight;
@@ -409,13 +401,13 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
 bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
                 const double prec, double p, rect& rec, const double& density_th)
 {
-    double density = (double) reg_size / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
+    double density = double(reg_size) / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
 
     if (density >= density_th) { return true; }
 
     // Try to reduce angle tolerance
-    double xc = (double) reg[0].x;
-    double yc = (double) reg[0].y;
+    double xc = double(reg[0].x);
+    double yc = double(reg[0].y);
     double ang_c = angles_data[reg[0].x + reg[0].y * angles.cols];
     double sum = 0, s_sum = 0;
     int n = 0;
@@ -432,9 +424,9 @@ bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle,
             ++n;
         }
     }
-    double mean_angle = sum / (double) n;
+    double mean_angle = sum / double(n);
     // 2 * standard deviation
-    double tau = 2.0 * sqrt((s_sum - 2.0 * mean_angle * sum) / (double) n + mean_angle * mean_angle ); 
+    double tau = 2.0 * sqrt((s_sum - 2.0 * mean_angle * sum) / double(n) + mean_angle * mean_angle ); 
 
     // Try new region
     region_grow(Point(reg[0].x, reg[0].y), reg, reg_size, reg_angle, tau);
@@ -442,7 +434,7 @@ bool LSD::refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle,
     if (reg_size < 2) { return false; }
 
     region2rect(reg, reg_size, reg_angle, prec, p, rec);
-    density = (double) reg_size / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
+    density = double(reg_size) / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
 
     if (density < density_th) 
     { 
@@ -458,8 +450,8 @@ bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, dou
                 const double prec, double p, rect& rec, double density, const double& density_th)
 {
     //compute region's radius */
-    double xc = (double) reg[0].x;
-    double yc = (double) reg[0].y;
+    double xc = double(reg[0].x);
+    double yc = double(reg[0].y);
     double rad1 = dist(xc, yc, rec.x1, rec.y1);
     double rad2 = dist(xc, yc, rec.x2, rec.y2);
     double rad = rad1 > rad2 ? rad1 : rad2;
@@ -470,7 +462,7 @@ bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, dou
         // remove points from the region and update 'used' map 
         for(int i = 0; i < reg_size; ++i)
         {
-            if(dist( xc, yc, (double) reg[i].x, (double) reg[i].y ) > rad)
+            if(dist( xc, yc, double(reg[i].x), double(reg[i].y)) > rad)
             {
                 // Remove point from the region 
                 used.data[reg[i].x + reg[i].y * used.cols] = NOTUSED;
@@ -487,15 +479,15 @@ bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, dou
         region2rect(reg, reg_size ,reg_angle, prec, p, rec);
 
         // Re-compute region points density
-        density = (double) reg_size / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
+        density = double(reg_size) / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
     }
 
     return true;
 }
 
-inline double LSD::dist(double x1, double y1, double x2, double y2)
+inline double LSD::dist(const double x1, const double y1, const double x2, const double y2) const
 {
-  return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
+    return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
 }
 
 double LSD::rect_improve()
@@ -504,7 +496,7 @@ double LSD::rect_improve()
     return LOG_EPS;
 }
 
-inline bool LSD::isAligned(const int& address, const double& theta, const double& prec)
+inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
     double a = angles_data[address];
     if (a == NOTDEF) { return false; }
