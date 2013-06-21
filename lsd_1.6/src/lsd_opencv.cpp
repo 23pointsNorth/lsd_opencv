@@ -302,11 +302,11 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
                         // Update region's angle
                         sumdx += cos(angles_data[c_addr]);
                         sumdy += sin(angles_data[c_addr]);
-                        reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
                     }
                 }
             }
         }
+    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
 }
 
 void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 

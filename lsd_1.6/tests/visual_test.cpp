@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 	//
 	Mat diff(image.size(), CV_8UC1, cv::Scalar(0));
 	int d = lsd_old.CompareSegs(seg_old, seg_cvo, image.size(), string("Segment diff"), &diff);
-	std::cout << "There are " << d << " none overlapping pixels" << std::endl;
+	std::cout << "There are " << d << " not overlapping pixels" << std::endl;
 	waitKey(0); // wait for human action 
 	
 	return 0;
