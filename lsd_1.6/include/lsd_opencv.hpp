@@ -41,6 +41,8 @@
 
 #define RELATIVE_ERROR_FACTOR 100.0
 
+const double DEG_TO_RADS = M_PI / 180;
+
 typedef struct coorlist_s
 {
     cv::Point2i p;

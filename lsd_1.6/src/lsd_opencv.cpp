@@ -192,7 +192,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             }
             else
             {
-                angles_data[adr] = std::atan2(gx, -gy);   /* gradient angle computation */
+                angles_data[adr] = cv::fastAtan2(gx, -gy) * DEG_TO_RADS;   // gradient angle computation 
                 if (norm > max_grad) { max_grad = norm; }
             }
 
@@ -298,7 +298,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
                     // Update region's angle
                     sumdx += cos(angles_data[c_addr]);
                     sumdy += sin(angles_data[c_addr]);
-                    reg_angle = atan2(sumdy, sumdx);
+                    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
                 }
             }
 }
@@ -385,8 +385,9 @@ double LSD::get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, 
     double lambda = 0.5 * (Ixx + Iyy - sqrt((Ixx - Iyy) * (Ixx - Iyy) + 4.0 * Ixy * Ixy));
 
     // compute angle
-    double theta = (fabs(Ixx)>fabs(Iyy))?atan2(lambda - Ixx, Ixy):atan2(Ixy, lambda - Iyy);
-
+    double theta = (fabs(Ixx)>fabs(Iyy))?cv::fastAtan2(lambda - Ixx, Ixy):cv::fastAtan2(Ixy, lambda - Iyy); // in degs
+    theta *= DEG_TO_RADS;
+    
     // Correct angle by 180 deg if necessary 
     if(angle_diff(theta, reg_angle) > prec) { theta += M_PI; }
 
