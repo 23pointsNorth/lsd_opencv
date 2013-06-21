@@ -11,20 +11,11 @@
 using namespace cv;
 
 LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
+        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
     CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
               _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
               _n_bins > 0 && _subdivision > 0);
-    
-    scale = _scale;
-    doRefine = _refine;
-    subdivision = _subdivision;
-    SIGMA_SCALE = _sigma_scale;
-    QUANT = _quant;
-    ANG_TH = _ang_th;
-    LOG_EPS = _log_eps;
-    DENSITY_TH = _density_th;
-    N_BINS = _n_bins;
 }
 
 void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect roi,
@@ -65,11 +56,11 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
     const double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
     vector<coorlist> list;
-    if (scale != 1)
+    if (SCALE != 1)
     {
         //TODO: Asses Gaussian blur, as scaling down applies.
         Mat gaussian_img;
-        double sigma = (scale < 1.0)?(SIGMA_SCALE / scale):(SIGMA_SCALE);
+        double sigma = (SCALE < 1.0)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
         double prec = 3.0;
         unsigned int h =  (unsigned int) ceil(sigma * sqrt(2.0 * prec * log(10.0)));
         int ksize = 1+2*h; // kernel size 
@@ -78,8 +69,8 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
         // Apply to the image
         filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
         // Scale image to needed size
-        resize(gaussian_img, scaled_image, Size(), scale, scale);
-        // resize(image, scaled_image, Size(), scale, scale);
+        resize(gaussian_img, scaled_image, Size(), SCALE, SCALE);
+        // resize(image, scaled_image, Size(), SCALE, SCALE);
         // imshow("Gaussian image", scaled_image);
         ll_angle(rho, BIN_SIZE, list);
     }
@@ -138,11 +129,11 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
             rec.x2 += 0.5; rec.y2 += 0.5;
 
             // scale the result values if a sub-sampling was performed
-            if(scale != 1.0)
+            if(SCALE != 1.0)
             {
-                rec.x1 /= scale; rec.y1 /= scale;
-                rec.x2 /= scale; rec.y2 /= scale;
-                rec.width /= scale;
+                rec.x1 /= SCALE; rec.y1 /= SCALE;
+                rec.x2 /= SCALE; rec.y2 /= SCALE;
+                rec.width /= SCALE;
             }
             
             //Store the relevant data

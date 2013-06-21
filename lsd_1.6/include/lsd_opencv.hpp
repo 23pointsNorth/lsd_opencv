@@ -95,15 +95,15 @@ private:
     int img_width;
     int img_height;
 
-    double scale;
-    bool doRefine;
-    int subdivision;
-    double SIGMA_SCALE;
-    double QUANT;
-    double ANG_TH;
-    double LOG_EPS;
-    double DENSITY_TH;
-    int N_BINS;
+    const double SCALE;
+    const bool doRefine;
+    const int SUBDIVISION;
+    const double SIGMA_SCALE;
+    const double QUANT;
+    const double ANG_TH;
+    const double LOG_EPS;
+    const double DENSITY_TH;
+    const int N_BINS;
 
     void flsd(const cv::Mat& _image,
               std::vector<cv::Vec4i>& lines, 
