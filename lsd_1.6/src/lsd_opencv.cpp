@@ -60,17 +60,13 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
     {
         //TODO: Asses Gaussian blur, as scaling down applies.
         Mat gaussian_img;
-        double sigma = (SCALE < 1.0)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
-        double prec = 3.0;
-        unsigned int h =  (unsigned int)(ceil(sigma * sqrt(2.0 * prec * log(10.0))));
-        int ksize = 1+2*h; // kernel size 
-        // Create a Gaussian kernel
-        Mat kernel = getGaussianKernel(ksize, sigma, CV_64FC1);
-        // Apply to the image
-        filter2D(image, gaussian_img, image.depth(), kernel, Point(-1, -1));
+        const double sigma = (SCALE < 1.0)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
+        const double sprec = 3.0;
+        const unsigned int h =  (unsigned int)(ceil(sigma * sqrt(2.0 * sprec * log(10.0))));
+        Size ksize(1 + 2 * h, 1 + 2 * h); // kernel size 
+        GaussianBlur(image, gaussian_img, ksize, sigma);
         // Scale image to needed size
         resize(gaussian_img, scaled_image, Size(), SCALE, SCALE);
-        // resize(image, scaled_image, Size(), SCALE, SCALE);
         // imshow("Gaussian image", scaled_image);
         ll_angle(rho, BIN_SIZE, list);
     }
@@ -82,8 +78,7 @@ void LSD::flsd(const Mat& _image, std::vector<Vec4i>& lines,
 
     const double logNT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);
     const int min_reg_size = int(-logNT/log10(p)); // minimal number of points in region that can give a meaningful event 
-    //std::cout << "Min region size: " << min_reg_size << std::endl;
-
+    
     // // Initialize region only when needed
     // Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
     used = Mat::zeros(scaled_image.size(), CV_8UC1); // zeros = NOTUSED
