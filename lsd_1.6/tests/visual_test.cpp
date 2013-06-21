@@ -38,7 +38,8 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD
 	//
-	LSD lsd_cv;
+	// LSD lsd_cv(0.8, 1, false); // Do not refine lines
+	LSD lsd_cv; // Refine founded lines
 	vector<Vec4i> lines;
 	
     std::vector<double> width, prec, nfa;

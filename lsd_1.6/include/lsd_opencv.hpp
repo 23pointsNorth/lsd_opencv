@@ -41,34 +41,21 @@
 
 #define RELATIVE_ERROR_FACTOR 100.0
 
-
-typedef struct lineSegment_s
-{
-    cv::Point2f begin;
-    cv::Point2f end;
-    double width;
-    double p;
-    double NFA;
-    lineSegment_s(cv::Point2f _b, cv::Point2f _e, double _w, double _p, double _NFA)
-      : begin(_b), end(_e), width(_w), p(_p), NFA(_NFA) { }
-  } lineSegment;
-
-
 typedef struct coorlist_s
 {
-  cv::Point2i p;
-  struct coorlist_s* next;
+    cv::Point2i p;
+    struct coorlist_s* next;
 } coorlist;
 
 typedef struct rect_s
 {
-  double x1, y1, x2, y2;    /* first and second point of the line segment */
-  double width;             /* rectangle width */
-  double x, y;              /* center of the rectangle */
-  double theta;             /* angle */
-  double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
-  double prec;              /* tolerance angle */
-  double p;                 /* probability of a point with angle within 'prec' */
+    double x1, y1, x2, y2;    /* first and second point of the line segment */
+    double width;             /* rectangle width */
+    double x, y;              /* center of the rectangle */
+    double theta;             /* angle */
+    double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
+    double prec;              /* tolerance angle */
+    double p;                 /* probability of a point with angle within 'prec' */
 } rect;
 
 class LSD
