@@ -45,6 +45,10 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
     if (w) Mat(*w).copyTo(width); 
     if (p) Mat(*p).copyTo(prec);
     if (n) Mat(*n).copyTo(nfa);
+
+    delete w;
+    delete p;
+    delete n;
 }
 
 void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines, 
