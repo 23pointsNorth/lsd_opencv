@@ -282,11 +282,13 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
 
     //Try neighboring regions
     for(int i=0; i<reg_size; ++i)
-        for(int xx = reg[i].x - 1; xx <= reg[i].x + 1; ++xx)
+    {
+        const Point2i& rpoint = reg[i];
+        for(int xx = rpoint.x - 1; xx <= rpoint.x + 1; ++xx)
         {
             if (xx >= 0 && xx < img_width)
             {
-                for(int yy = reg[i].y - 1; yy <= reg[i].y + 1; ++yy)
+                for(int yy = rpoint.y - 1; yy <= rpoint.y + 1; ++yy)
                 {
                     int c_addr = xx + yy * img_width;
                     if((used.data[c_addr] != USED) &&
@@ -302,11 +304,14 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
                         // Update region's angle
                         sumdx += cos(angles_data[c_addr]);
                         sumdy += sin(angles_data[c_addr]);
+                        // reg_angle is used in the isAligned, so it needs to be updates?
+                        reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
                     }
                 }
             }
         }
-    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
+    }
+    //reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
 }
 
 void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle, 
