@@ -10,6 +10,49 @@
 
 using namespace cv;
 
+inline double distSq(const double x1, const double y1, const double x2, const double y2)
+{
+    return (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
+}
+
+inline double dist(const double x1, const double y1, const double x2, const double y2)
+{
+    return sqrt(distSq(x1, y1, x2, y2));
+}
+
+// Signed angle difference
+inline double angle_diff_signed(const double& a, const double& b)
+{
+    double diff = a - b;
+    while(diff <= -M_PI) diff += M_2__PI;
+    while(diff >   M_PI) diff -= M_2__PI;
+    return diff;
+}
+
+// Absolute value angle difference
+inline double angle_diff(const double& a, const double& b)
+{
+    return std::fabs(angle_diff_signed(a, b));
+}
+
+// Compare doubles by relative error.
+inline bool double_equal(const double& a, const double& b)
+{
+    // trivial case
+    if(a == b) return true;
+
+    double abs_diff = fabs(a - b);
+    double aa = fabs(a);
+    double bb = fabs(b);
+    double abs_max = (aa > bb)? aa : bb;
+
+    if(abs_max < DBL_MIN) abs_max = DBL_MIN;
+
+    return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
@@ -294,7 +337,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
                 int c_addr = rpoint.x - 1 + yy * img_width;
                 for(int xx = rpoint.x - 1; xx <= rpoint.x + 1; ++xx, ++c_addr)
                 {
-                    if (!(xx >= 0 && xx < img_width))
+                    if (xx < 0 || xx >= img_width)
                         continue;
                     if((used.data[c_addr] != USED) &&
                        (isAligned(c_addr, reg_angle, prec)))
@@ -352,9 +395,9 @@ void LSD::region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, c
         double w = -regdx * dy + regdy * dx;
 
         if(l > l_max) l_max = l;
-        if(l < l_min) l_min = l;
+        else if(l < l_min) l_min = l;
         if(w > w_max) w_max = w;
-        if(w < w_min) w_min = w;
+        else if(w < w_min) w_min = w;
     }
 
     // Store values
@@ -465,17 +508,17 @@ bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, dou
     // Compute region's radius
     double xc = double(reg[0].x);
     double yc = double(reg[0].y);
-    double rad1 = dist(xc, yc, rec.x1, rec.y1);
-    double rad2 = dist(xc, yc, rec.x2, rec.y2);
-    double rad = rad1 > rad2 ? rad1 : rad2;
+    double radSq1 = distSq(xc, yc, rec.x1, rec.y1);
+    double radSq2 = distSq(xc, yc, rec.x2, rec.y2);
+    double radSq = radSq1 > radSq2 ? radSq1 : radSq2;
 
     while(density < density_th)
     {
-        rad *= 0.75; // reduce region's radius to 75% of its value
+        radSq *= 0.75*0.75; // reduce region's radius to 75% of its value
         // remove points from the region and update 'used' map 
         for(int i = 0; i < reg_size; ++i)
         {
-            if(dist( xc, yc, double(reg[i].x), double(reg[i].y)) > rad)
+            if(distSq( xc, yc, double(reg[i].x), double(reg[i].y)) > radSq)
             {
                 // Remove point from the region 
                 used.data[reg[i].x + reg[i].y * used.cols] = NOTUSED;
@@ -496,11 +539,6 @@ bool LSD::reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, dou
     }
 
     return true;
-}
-
-inline double LSD::dist(const double x1, const double y1, const double x2, const double y2) const
-{
-    return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
 }
 
 double LSD::rect_improve()
@@ -524,39 +562,4 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
     }
 
     return n_theta <= prec;
-}
-
-// Absolute value angle difference 
-inline double LSD::angle_diff(const double& a, const double& b) const
-{
-    double diff = a - b;
-    while(diff <= -M_PI) diff += M_2__PI;
-    while(diff >   M_PI) diff -= M_2__PI;
-    if(diff < 0.0) diff = -diff;
-    return diff;
-}
-
-// Signed angle difference 
-inline double LSD::angle_diff_signed(const double& a, const double& b) const
-{
-    double diff = a - b;
-    while(diff <= -M_PI) diff += M_2__PI;
-    while(diff >   M_PI) diff -= M_2__PI;
-    return diff;
-}
-
-// Compare doubles by relative error.
-inline bool LSD::double_equal(const double& a, const double& b) const
-{
-    // trivial case
-    if(a == b) return true;
-
-    double abs_diff = fabs(a - b);
-    double aa = fabs(a);
-    double bb = fabs(b);
-    double abs_max = (aa > bb)? aa : bb;
-
-    if(abs_max < DBL_MIN) abs_max = DBL_MIN;
-
-    return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }

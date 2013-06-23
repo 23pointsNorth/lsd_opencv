@@ -107,12 +107,8 @@ private:
                 const double prec, double p, rect& rec, const double& density_th);
     bool reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
                 const double prec, double p, rect& rec, double density, const double& density_th);
-    double dist(const double x1, const double y1, const double x2, const double y2) const;
     double rect_improve();
     bool isAligned(const int& address, const double& theta, const double& prec) const;
-    double angle_diff(const double& a, const double& b) const;
-    double angle_diff_signed(const double& a, const double& b) const;
-    bool double_equal(const double& a, const double& b) const;
     double get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
                      const double& y, const double& reg_angle, const double& prec) const;
 };
