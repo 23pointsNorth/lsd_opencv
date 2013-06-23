@@ -61,21 +61,25 @@ LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, dou
               _n_bins > 0 && _subdivision > 0);
 }
 
-void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect roi,
+void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi,
                 cv::OutputArray& width, cv::OutputArray& prec,
                 cv::OutputArray& nfa)
 {
     Mat_<double> img = _image.getMat();
     CV_Assert(img.data && img.channels() == 1);
 
-    // If default, then increase roi to fit whole image
+    // If default, then convert the whole image, else just the specified by roi
+    roi = _roi;
     if (roi.area() == 0)
     {
-        roi = Rect(0, 0, img.cols, img.rows);
+        img.convertTo(image, CV_64FC1);
     }
-
-    // Crop image to roi and convert it to the needed type. Store in image.
-    img(roi).convertTo(image, CV_64FC1);
+    else
+    {
+        roix = roi.x;
+        roiy = roi.y;
+        img(roi).convertTo(image, CV_64FC1);
+    }
 
     std::vector<Vec4i> lines;
     std::vector<double>* w = (width.needed())?(new std::vector<double>()):0;
@@ -179,6 +183,14 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
                 rec.width /= SCALE;
             }
             
+            if (roi.area()) // if a roi has been given by the user, adjust coordinates
+            {
+                rec.x1 += roix;
+                rec.y1 += roiy;
+                rec.x2 += roix;
+                rec.y2 += roiy;
+            }
+
             //Store the relevant data
             lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
             if (widths) widths->push_back(rec.width);

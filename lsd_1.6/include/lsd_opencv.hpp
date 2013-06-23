@@ -65,7 +65,7 @@ public:
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
-    void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect roi = cv::Rect(),
+    void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi = cv::Rect(),
                 cv::OutputArray& width = cv::noArray(), cv::OutputArray& prec = cv::noArray(),
                 cv::OutputArray& nfa = cv::noArray());
 
@@ -81,6 +81,9 @@ private:
 
     int img_width;
     int img_height;
+
+    cv::Rect roi;
+    int roix, roiy;
 
     const double SCALE;
     const bool doRefine;
