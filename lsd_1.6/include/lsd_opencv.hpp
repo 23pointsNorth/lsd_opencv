@@ -94,22 +94,30 @@ private:
     const double DENSITY_TH;
     const int N_BINS;
 
+    struct RegionPoint {
+      int x;
+      int y;
+      uchar* used;
+      double angle;
+      double modgrad;
+    };
+
     void flsd(const cv::Mat_<double>& _image,
               std::vector<cv::Vec4i>& lines, 
               std::vector<double>* widths, std::vector<double>* precisions, 
               std::vector<double>* nfas);
     void ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list);
-    void region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg, 
+    void region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
                      int& reg_size, double& reg_angle, const double& prec);
-    void region2rect(const std::vector<cv::Point2i>& reg, const int reg_size, const double reg_angle,
+    void region2rect(const std::vector<RegionPoint>& reg, const int reg_size, const double reg_angle,
                     const double prec, const double p, rect& rec) const;
-    bool refine(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
+    bool refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
                 const double prec, double p, rect& rec, const double& density_th);
-    bool reduce_region_radius(std::vector<cv::Point2i>& reg, int& reg_size, double reg_angle, 
+    bool reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
                 const double prec, double p, rect& rec, double density, const double& density_th);
     double rect_improve();
     bool isAligned(const int& address, const double& theta, const double& prec) const;
-    double get_theta(const std::vector<cv::Point2i>& reg, const int& reg_size, const double& x, 
+    double get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, const double& x,
                      const double& y, const double& reg_angle, const double& prec) const;
 };
 
