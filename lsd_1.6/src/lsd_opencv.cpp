@@ -327,8 +327,8 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
     reg[0].angle = reg_angle;
     reg[0].modgrad = modgrad_data[addr];
 
-    double sumdx = cos(reg_angle);
-    double sumdy = sin(reg_angle);
+    float sumdx = cos(reg_angle);
+    float sumdy = sin(reg_angle);
     *reg[0].used = USED;
 
     //Try neighboring regions
@@ -357,8 +357,8 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
                         ++reg_size;
 
                         // Update region's angle
-                        sumdx += cos(angle);
-                        sumdy += sin(angle);
+                        sumdx += cos(float(angle));
+                        sumdy += sin(float(angle));
                         // reg_angle is used in the isAligned, so it needs to be updates?
                         reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
                     }
