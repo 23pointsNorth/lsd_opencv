@@ -116,12 +116,12 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
         // Scale image to needed size
         resize(gaussian_img, scaled_image, Size(), SCALE, SCALE);
         // imshow("Gaussian image", scaled_image);
-        ll_angle(rho, BIN_SIZE, list);
+        ll_angle(rho, N_BINS, list);
     }
     else
     {
         scaled_image = image;
-        ll_angle(rho, BIN_SIZE, list);
+        ll_angle(rho, N_BINS, list);
     }
 
     const double logNT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);

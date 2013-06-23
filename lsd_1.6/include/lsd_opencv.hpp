@@ -37,8 +37,6 @@
 #define NOTUSED     0   // Label for pixels not used in yet. 
 #define USED        1   // Label for pixels already used in detection. 
 
-#define BIN_SIZE    1024
-
 #define RELATIVE_ERROR_FACTOR 100.0
 
 const double DEG_TO_RADS = M_PI / 180;
