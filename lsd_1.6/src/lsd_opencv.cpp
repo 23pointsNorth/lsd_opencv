@@ -178,26 +178,25 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     /* Computing gradient for remaining pixels */
     CV_Assert(scaled_image.isContinuous());   // Accessing image data linearly
     double max_grad = 0.0;
-    for(int x = 0; x < img_width - 1; ++x)
+    for(int y = 0; y < img_height - 1; ++y)
     {
-        for(int y = 0; y < img_height - 1; ++y)
+        for(int addr = y * img_width, addr_end = addr + img_width - 1; addr < addr_end; ++addr)
         {
-            int adr = y * img_width + x; 
-            double DA = scaled_image_data[adr + img_width + 1] - scaled_image_data[adr];
-            double BC = scaled_image_data[adr + 1] - scaled_image_data[adr + img_width];
+            double DA = scaled_image_data[addr + img_width + 1] - scaled_image_data[addr];
+            double BC = scaled_image_data[addr + 1] - scaled_image_data[addr + img_width];
             double gx = DA + BC;    /* gradient x component */
             double gy = DA - BC;    /* gradient y component */
             double norm = std::sqrt((gx * gx + gy * gy)/4.0);   /* gradient norm */
             
-            modgrad_data[adr] = norm;    /* store gradient*/
+            modgrad_data[addr] = norm;    /* store gradient*/
 
             if (norm <= threshold)  /* norm too small, gradient no defined */
             {
-                angles_data[adr] = NOTDEF;
+                angles_data[addr] = NOTDEF;
             }
             else
             {
-                angles_data[adr] = cv::fastAtan2(gx, -gy) * DEG_TO_RADS;   // gradient angle computation 
+                angles_data[addr] = cv::fastAtan2(gx, -gy) * DEG_TO_RADS;   // gradient angle computation
                 if (norm > max_grad) { max_grad = norm; }
             }
 
@@ -227,13 +226,13 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     unsigned int count = 0;
     double bin_coef = double(n_bins - 1) / max_grad;
 
-    for(int x = 0; x < img_width - 1; ++x)
+    for(int y = 0; y < img_height - 1; ++y)
     {
-        for(int y = 0; y < img_height - 1; ++y)
+        const double* norm = modgrad_data + y * img_width;
+        for(int x = 0; x < img_width - 1; ++x, ++norm)
         {
-            double norm = modgrad_data[y * img_width + x];
             // store the point in the right bin according to its norm 
-            int i = (unsigned int)(norm * bin_coef);
+            int i = int((*norm) * bin_coef);
             if(!range_e[i])
             {
                 range_e[i] = range_s[i] = &list[count];
@@ -288,15 +287,16 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<cv::Point2i>& reg,
     for(int i=0; i<reg_size; ++i)
     {
         const Point2i& rpoint = reg[i];
-        for(int xx = rpoint.x - 1; xx <= rpoint.x + 1; ++xx)
+        for(int yy = rpoint.y - 1; yy <= rpoint.y + 1; ++yy)
         {
-            if (xx >= 0 && xx < img_width)
+            if ((yy >= 0) && (yy < img_height))
             {
-                for(int yy = rpoint.y - 1; yy <= rpoint.y + 1; ++yy)
+                int c_addr = rpoint.x - 1 + yy * img_width;
+                for(int xx = rpoint.x - 1; xx <= rpoint.x + 1; ++xx, ++c_addr)
                 {
-                    int c_addr = xx + yy * img_width;
+                    if (!(xx >= 0 && xx < img_width))
+                        continue;
                     if((used.data[c_addr] != USED) &&
-                       (yy >= 0) && (yy < img_height) &&
                        (isAligned(c_addr, reg_angle, prec)))
                     {
                         // Add point
