@@ -10,19 +10,13 @@
 
 #include <opencv2/core/core.hpp>
 
-// // LSD parameters 
-// #define SIGMA_SCALE 0.6    // Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
-// #define QUANT       2.0    // Bound to the quantization error on the gradient norm. 
-// #define ANG_TH      22.5   // Gradient angle tolerance in degrees.
-// #define LOG_EPS     0.0    // Detection threshold: -log10(NFA) > log_eps
-// #define DENSITY_TH  0.7    // Minimal density of region points in rectangle.
-// #define N_BINS      1024   // Number of bins in pseudo-ordering of gradient modulus.
-
-// Other constants
-// ln(10) 
-#ifndef M_LN10
-#define M_LN10      2.30258509299404568402
-#endif // !M_LN10
+// Default LSD parameters 
+// SIGMA_SCALE 0.6    - Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
+// QUANT       2.0    - Bound to the quantization error on the gradient norm. 
+// ANG_TH      22.5   - Gradient angle tolerance in degrees.
+// LOG_EPS     0.0    - Detection threshold: -log10(NFA) > log_eps
+// DENSITY_TH  0.7    - Minimal density of region points in rectangle.
+// N_BINS      1024   - Number of bins in pseudo-ordering of gradient modulus.
 
 // PI 
 #ifndef M_PI
@@ -96,11 +90,11 @@ private:
     const int N_BINS;
 
     struct RegionPoint {
-      int x;
-      int y;
-      uchar* used;
-      double angle;
-      double modgrad;
+        int x;
+        int y;
+        uchar* used;
+        double angle;
+        double modgrad;
     };
 
     void flsd(const cv::Mat_<double>& _image,

@@ -53,6 +53,21 @@ inline bool double_equal(const double& a, const double& b)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Create an LSD object. Specifying scale, number of subdivisions for the image, should the lines be refined and other constants as follows:
+ *
+ * @param _scale        The scale of the image that will be used to find the lines. Range (0..1].
+ * @param _subdivision  The factor by which each dimension of the image will be divided into. 2 -> generates 2x2 rois and finds lines in them.
+ *                      Note: Using smalled images (higher subdivision factor) will find fines lines.
+ * @param _refine       Should the lines found be refined? E.g. breaking arches into smaller line approximations. 
+ *                      If disabled, execution is faster.
+ * @param _sigma_scale  Sigma for Gaussian filter is computed as sigma = _sigma_scale/_scale.
+ * @param _quant        Bound to the quantization error on the gradient norm. 
+ * @param _ang_th       Gradient angle tolerance in degrees.
+ * @param _log_eps      Detection threshold: -log10(NFA) > _log_eps
+ * @param _density_th   Minimal density of aligned region points in rectangle.
+ * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
+ */
 LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
@@ -61,6 +76,23 @@ LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, dou
               _n_bins > 0 && _subdivision > 0);
 }
 
+/**
+ * Detect lines in the input image with the specified ROI.
+ *
+ * @param _image    A grayscale(CV_8UC1) input image. 
+ * @param _lines    Return: A vector of Vec4i elements specifying the beginning and ending point of a line.
+ *                          Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end. 
+ *                          Returned lines are strictly oriented depending on the gradient.
+ * @param _roi      Return: ROI of the image, where lines are to be found. If specified, the returning 
+ *                          lines coordinates are image wise.
+ * @param width     Return: Vector of widths of the regions, where the lines are found. E.g. Width of line.
+ * @param prec      Return: Vector of precisions with which the lines are found.
+ * @param nfa       Return: Vector containing number of false alarms in the line region, with precision of 10%. 
+ *                          The bigger the value, logarithmically better the detection.
+ *                              * 1 corresponds to 10 mean false alarms
+ *                              * 0 corresponds to 1 mean false alarm
+ *                              * 1 corresponds to 0.1 mean false alarms
+ */
 void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi,
                 cv::OutputArray& width, cv::OutputArray& prec,
                 cv::OutputArray& nfa)
@@ -98,6 +130,21 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
     delete n;
 }
 
+/**
+ * Detect lines in the whole input image.
+ *
+ * @param _image        A grayscale(CV_8UC1) input image. 
+ * @param lines         Return: A vector of Vec4i elements specifying the beginning and ending point of a line.
+ *                              Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end. 
+ *                              Returned lines are strictly oriented depending on the gradient.
+ * @param widths        Return: Vector of widths of the regions, where the lines are found. E.g. Width of line.
+ * @param precisions    Return: Vector of precisions with which the lines are found.
+ * @param nfas          Return: Vector containing number of false alarms in the line region, with precision of 10%. 
+ *                              The bigger the value, logarithmically better the detection.
+ *                                  * 1 corresponds to 10 mean false alarms
+ *                                  * 0 corresponds to 1 mean false alarm
+ *                                  * 1 corresponds to 0.1 mean false alarms
+ */
 void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines, 
     std::vector<double>* widths, std::vector<double>* precisions, 
     std::vector<double>* nfas)
@@ -119,7 +166,6 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
         GaussianBlur(image, gaussian_img, ksize, sigma);
         // Scale image to needed size
         resize(gaussian_img, scaled_image, Size(), SCALE, SCALE);
-        // imshow("Gaussian image", scaled_image);
         ll_angle(rho, N_BINS, list);
     }
     else
@@ -136,18 +182,14 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
     used = Mat_<uchar>::zeros(scaled_image.size()); // zeros = NOTUSED
     vector<RegionPoint> reg(img_width * img_height);
     
-    // std::cout << "Search." << std::endl;
     // Search for line segments 
     unsigned int ls_count = 0;
     unsigned int list_size = list.size();
     for(unsigned int i = 0; i < list_size; ++i)
     {
         unsigned int adx = list[i].p.x + list[i].p.y * img_width;
-        // std::cout << "adx " << adx << std::endl;
-        // std::cout << "Used: " << used.data[adx] << std::endl;
         if((used.data[adx] == NOTUSED) && (angles_data[adx] != NOTDEF))
         {
-            // std::cout << "Inside for 2 " << std::endl;
             int reg_size;
             double reg_angle;
             region_grow(list[i].p, reg, reg_size, reg_angle, prec);
@@ -209,6 +251,14 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
  
 }
 
+/**
+ * Finds the angles and the gradients of the image. Generates a list of pseudo ordered points.
+ *
+ * @param threshold The minimum value of the angle that is considered defined, otherwise NOTDEF
+ * @param n_bins    The number of bins with which gradients are ordered by, using bucket sort. 
+ * @param list      Return: Vector of coordinate points that are pseudo ordered by magnitude. 
+ *                  Pixels would be ordered by norm value, up to a precision given by max_grad/n_bins.
+ */
 void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list)
 {
     //Initialize data
@@ -225,13 +275,11 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     // Undefined the down and right boundaries 
     angles.row(img_height - 1).setTo(NOTDEF);
     angles.col(img_width - 1).setTo(NOTDEF);
-    // cv::Mat w_ndf(1, img_width, CV_64FC1, NOTDEF);
-    // cv::Mat h_ndf(img_height, 1, CV_64FC1, NOTDEF);
-    // w_ndf.row(0).copyTo(angles.row(img_height - 1));
-    // h_ndf.col(0).copyTo(angles.col(img_width -1));
     
-    /* Computing gradient for remaining pixels */
-    CV_Assert(scaled_image.isContinuous());   // Accessing image data linearly
+    // Computing gradient for remaining pixels
+    CV_Assert(scaled_image.isContinuous() && 
+              modgrad.isContinuous() && 
+              angles.isContinuous());   // Accessing image data linearly
     double max_grad = 0.0;
     for(int y = 0; y < img_height - 1; ++y)
     {
@@ -239,13 +287,13 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
         {
             double DA = scaled_image_data[addr + img_width + 1] - scaled_image_data[addr];
             double BC = scaled_image_data[addr + 1] - scaled_image_data[addr + img_width];
-            double gx = DA + BC;    /* gradient x component */
-            double gy = DA - BC;    /* gradient y component */
-            double norm = std::sqrt((gx * gx + gy * gy)/4.0);   /* gradient norm */
+            double gx = DA + BC;    // gradient x component 
+            double gy = DA - BC;    // gradient y component 
+            double norm = std::sqrt((gx * gx + gy * gy)/4.0);   // gradient norm 
             
-            modgrad_data[addr] = norm;    /* store gradient*/
+            modgrad_data[addr] = norm;    // store gradient
 
-            if (norm <= threshold)  /* norm too small, gradient no defined */
+            if (norm <= threshold)  // norm too small, gradient no defined 
             {
                 angles_data[addr] = NOTDEF;
             }
@@ -257,24 +305,8 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
 
         }
     }
-    // std::cout << "Max grad: " << max_grad << std::endl;
-
-    /* Compute histogram of gradient values */
-    // // SLOW! 
-    // std::vector<std::vector<cv::Point> > range(n_bins);
-    // //for(int i = 0; i < n_bins; ++i) {range[i].reserve(img_width*img_height/n_bins); }
-    // double bin_coef = (double) n_bins / max_grad;
-    // for(int x = 0; x < img_width - 1; ++x)
-    // {
-    //     for(int y = 0; y < img_height - 1; ++y)
-    //     {
-    //         double norm = modgrad.data[y * img_width + x];
-    //         /* store the point in the right bin according to its norm */
-    //         int i = (unsigned int) (norm * bin_coef);
-    //         range[i].push_back(cv::Point(x, y));
-    //     }
-    // }
-
+    
+    // Compute histogram of gradient values
     list = vector<coorlist>(img_width * img_height);
     vector<coorlist*> range_s(n_bins);
     vector<coorlist*> range_e(n_bins);
@@ -321,11 +353,18 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             }
         }
     }
-
-    // std::cout << "End" << std::endl;
-    //imshow("Angles", angles);
 }
 
+/**
+ * Grow a region starting from point s with a defined precision, 
+ * returning the containing points size and the angle of the gradients.
+ *
+ * @param s         Starting point for the region.
+ * @param reg       Return: Vector of points, that are part of the region
+ * @param reg_size  Return: The size of the region.
+ * @param reg_angle Return: The mean angle of the region.
+ * @param prec      The precision by which each region angle should be aligned to the mean.
+ */
 void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
                       int& reg_size, double& reg_angle, const double& prec)
 {
@@ -344,7 +383,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
     *reg[0].used = USED;
 
     //Try neighboring regions
-    for(int i=0; i<reg_size; ++i)
+    for(int i = 0; i < reg_size; ++i)
     {
         const RegionPoint& rpoint = reg[i];
         int xx_min = std::max(rpoint.x - 1, 0), xx_max = std::min(rpoint.x + 1, img_width - 1);
@@ -377,19 +416,28 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
             }
         }
     }
-    //reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
 }
 
+/**
+ * Finds the bounding rotated rectangle of a region.
+ *
+ * @param reg       The region of points, from which the rectangle to be constructed from.
+ * @param reg_size  The number of points in the region.
+ * @param reg_angle The mean angle of the region.
+ * @param prec      The precision by which points were found.
+ * @param p         Probability of a point with angle within 'prec'.
+ * @param rec       Return: The generated rectangle.
+ */
 void LSD::region2rect(const std::vector<RegionPoint>& reg, const int reg_size, const double reg_angle,
                       const double prec, const double p, rect& rec) const
 {
     double x = 0, y = 0, sum = 0;
     for(int i = 0; i < reg_size; ++i)
     {
-        const RegionPoint& p = reg[i];
-        const double& weight = p.modgrad;
-        x += double(p.x) * weight;
-        y += double(p.y) * weight;
+        const RegionPoint& pnt = reg[i];
+        const double& weight = pnt.modgrad;
+        x += double(pnt.x) * weight;
+        y += double(pnt.y) * weight;
         sum += weight;
     }
     // Weighted sum must differ from 0
@@ -437,6 +485,9 @@ void LSD::region2rect(const std::vector<RegionPoint>& reg, const int reg_size, c
     if(rec.width < 1.0) rec.width = 1.0;
 }
 
+/**
+ * Compute region's angle as the principal inertia axis of the region.
+ */
 double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, const double& x,
                       const double& y, const double& reg_angle, const double& prec) const
 {
@@ -473,6 +524,12 @@ double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, 
     return theta;
 }
 
+/**
+ * For that, an estimation of the angle tolerance is performed by the standard deviation of the angle at points 
+ * near the region's starting point. Then, a new region is grown starting from the same point, but using the 
+ * estimated angle tolerance. If this fails to produce a rectangle with the right density of region points, 
+ * 'reduce_region_radius' is called to try to satisfy this condition.
+ */
 bool LSD::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
                 const double prec, double p, rect& rec, const double& density_th)
 {
@@ -521,6 +578,10 @@ bool LSD::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
     }
 }
 
+/**
+ * Reduce the region size, by elimination the points far from the starting point, until that leads to 
+ * rectangle with the right density of region points or to discard the region if too small.
+ */
 bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
                 const double prec, double p, rect& rec, double density, const double& density_th)
 {
@@ -559,12 +620,18 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
     return true;
 }
 
+/** 
+ * Try some rectangles variations to improve NFA value. Only if the rectangle is not meaningful (i.e., log_nfa <= log_eps).
+ */
 double LSD::rect_improve()
 {
     // test return
     return LOG_EPS;
 }
 
+/** 
+ * Is the point at place 'address' aligned to angle theta, up to precision 'prec'?
+ */
 inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
     const double& a = angles_data[address];
