@@ -22,8 +22,8 @@
 #ifndef M_PI
 #define M_PI        CV_PI           // 3.14159265358979323846 
 #endif
-#define M_3_2_PI    (3*CV_PI) / 2   // 4.71238898038  // 3/2 pi 
-#define M_2__PI     2*CV_PI         // 6.28318530718  // 2 pi 
+#define M_3_2_PI    (3 * CV_PI) / 2   // 4.71238898038  // 3/2 pi 
+#define M_2__PI     2 * CV_PI         // 6.28318530718  // 2 pi 
 
 // Label for pixels with undefined gradient. 
 #define NOTDEF      double(-1024.0)
@@ -34,23 +34,6 @@
 #define RELATIVE_ERROR_FACTOR 100.0
 
 const double DEG_TO_RADS = M_PI / 180;
-
-typedef struct coorlist_s
-{
-    cv::Point2i p;
-    struct coorlist_s* next;
-} coorlist;
-
-typedef struct rect_s
-{
-    double x1, y1, x2, y2;    /* first and second point of the line segment */
-    double width;             /* rectangle width */
-    double x, y;              /* center of the rectangle */
-    double theta;             /* angle */
-    double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
-    double prec;              /* tolerance angle */
-    double p;                 /* probability of a point with angle within 'prec' */
-} rect;
 
 class LSD
 {
@@ -127,6 +110,24 @@ private:
         double angle;
         double modgrad;
     };
+
+    
+    typedef struct coorlist_s
+    {
+        cv::Point2i p;
+        struct coorlist_s* next;
+    } coorlist;
+
+    typedef struct rect_s
+    {
+        double x1, y1, x2, y2;    /* first and second point of the line segment */
+        double width;             /* rectangle width */
+        double x, y;              /* center of the rectangle */
+        double theta;             /* angle */
+        double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
+        double prec;              /* tolerance angle */
+        double p;                 /* probability of a point with angle within 'prec' */
+    } rect;
 
 /**
  * Detect lines in the whole input image.
