@@ -10,6 +10,7 @@
 #include <opencv2/highgui/highgui.hpp> // Only for imshow
 
 #include "lsd_opencv.hpp"
+#include "lsd_const.hpp"
 
 using namespace cv;
 
