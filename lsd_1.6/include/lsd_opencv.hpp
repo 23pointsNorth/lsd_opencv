@@ -69,13 +69,53 @@ public:
  * @param prec      Return: Vector of precisions with which the lines are found.
  * @param nfa       Return: Vector containing number of false alarms in the line region, with precision of 10%. 
  *                          The bigger the value, logarithmically better the detection.
- *                              * 1 corresponds to 10 mean false alarms
+ *                              * -1 corresponds to 10 mean false alarms
  *                              * 0 corresponds to 1 mean false alarm
  *                              * 1 corresponds to 0.1 mean false alarms
  */
     void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi = cv::Rect(),
                 cv::OutputArray& width = cv::noArray(), cv::OutputArray& prec = cv::noArray(),
                 cv::OutputArray& nfa = cv::noArray());
+/**
+ * Draw lines on the given canvas.
+ *
+ * @param image     The image, where lines will be drawn. 
+ *                  Should have the size of the image, where the lines were found
+ * @param lines     The lines that need to be drawn
+ */    
+    static void drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines);
+
+/**
+ * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
+ *
+ * @param image     The image, where lines will be drawn. 
+ *                  Should have the size of the image, where the lines were found
+ * @param lines1    The first lines that need to be drawn. Color - Red.
+ * @param lines2    The second lines that need to be drawn. Color - Blue.
+ * @return          The number of mismatching pixels between lines1 and lines2.
+ */
+    static int compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image = 0);
+    
+/*
+ * Shows the lines in a window.
+ *
+ * @param name      The name of the window where the lines will be shown.
+ * @param image     The image that will be used as a background. 
+ * @param lines     The lines that need to be drawn.
+ */    
+    static void showSegments(const std::string& name, const cv::Mat& image, const std::vector<cv::Vec4i>& lines);
+
+/*
+ * Shows the 2 vector of lines drawn on a window.
+ *
+ * @param name      The name of the window where the lines will be shown.
+ * @param size      The size that will be used to create an image to draw the lines, if no image is specified.
+ * @param lines1    The lines that need to be drawn with red.
+ * @param lines2    The lines that need to be drawn with blue.
+ * @param image     A optional pointer to an image that may be used as a background.
+ * @return          The number of non overlapping pixels. 
+ */    
+    static int showSegments(const std::string& name, cv::Size size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image = 0);
 
 private:
     cv::Mat image;
@@ -111,7 +151,7 @@ private:
         double modgrad;
     };
 
-    
+
     typedef struct coorlist_s
     {
         cv::Point2i p;
@@ -120,13 +160,13 @@ private:
 
     typedef struct rect_s
     {
-        double x1, y1, x2, y2;    /* first and second point of the line segment */
-        double width;             /* rectangle width */
-        double x, y;              /* center of the rectangle */
-        double theta;             /* angle */
-        double dx,dy;             /* (dx,dy) is vector oriented as the line segment */
-        double prec;              /* tolerance angle */
-        double p;                 /* probability of a point with angle within 'prec' */
+        double x1, y1, x2, y2;    // first and second point of the line segment
+        double width;             // rectangle width
+        double x, y;              // center of the rectangle
+        double theta;             // angle
+        double dx,dy;             // (dx,dy) is vector oriented as the line segment
+        double prec;              // tolerance angle
+        double p;                 // probability of a point with angle within 'prec'
     } rect;
 
 /**
@@ -140,7 +180,7 @@ private:
  * @param precisions    Return: Vector of precisions with which the lines are found.
  * @param nfas          Return: Vector containing number of false alarms in the line region, with precision of 10%. 
  *                              The bigger the value, logarithmically better the detection.
- *                                  * 1 corresponds to 10 mean false alarms
+ *                                  * -1 corresponds to 10 mean false alarms
  *                                  * 0 corresponds to 1 mean false alarm
  *                                  * 1 corresponds to 0.1 mean false alarms
  */

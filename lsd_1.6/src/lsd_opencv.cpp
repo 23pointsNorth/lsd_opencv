@@ -4,7 +4,10 @@
 #include <climits>
 #include <cfloat>
 
+#include <iostream> // !!!@!#!@#!@#!@#!@W
+
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp> // Only for imshow
 
 #include "lsd_opencv.hpp"
 
@@ -66,7 +69,7 @@ void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect
                 cv::OutputArray& nfa)
 {
     Mat_<double> img = _image.getMat();
-    CV_Assert(img.data && img.channels() == 1);
+    CV_Assert(!img.empty() && img.channels() == 1);
 
     // If default, then convert the whole image, else just the specified by roi
     roi = _roi;
@@ -553,4 +556,108 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
     }
 
     return n_theta <= prec;
+}
+
+
+void LSD::drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines)
+{
+    CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
+
+    Mat gray;
+    if (image.channels() == 1)
+    {
+        gray = image;
+    }
+    else if (image.channels() == 3)
+    {
+        cv::cvtColor(image, gray, CV_BGR2GRAY);
+    }
+    
+    // Create a 3 channel image in order to draw colored lines
+    vector<Mat> planes;
+    planes.push_back(gray);
+    planes.push_back(gray);
+    planes.push_back(gray);
+
+    merge(planes, image);
+
+    // Draw segments
+    for(unsigned int i = 0; i < lines.size(); ++i)
+    {
+        Point b(lines[i][0], lines[i][1]);
+        Point e(lines[i][2], lines[i][3]);
+        line(image, b, e, Scalar(0, 0, 255), 1);
+    }
+}
+
+void LSD::showSegments(const std::string& name, const cv::Mat& image, const std::vector<cv::Vec4i>& lines)
+{
+    Mat img = image.clone();
+    drawSegments(img, lines);
+    imshow(name.c_str(), img);
+}
+
+int LSD::compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
+{
+    //CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
+    
+    if (image && image->size() != size) size = image->size();
+    CV_Assert(size.area());
+
+    Mat_<uchar> I1 = Mat_<uchar>::zeros(size);
+    Mat_<uchar> I2 = Mat_<uchar>::zeros(size);
+
+    // Draw segments
+    for(unsigned int i = 0; i < lines1.size(); ++i)
+    {
+        Point b(lines1[i][0], lines1[i][1]);
+        Point e(lines1[i][2], lines1[i][3]);
+        line(I1, b, e, Scalar::all(255), 1);
+    }
+    for(unsigned int i = 0; i < lines2.size(); ++i)
+    {
+        Point b(lines2[i][0], lines2[i][1]);
+        Point e(lines2[i][2], lines2[i][3]);
+        line(I2, b, e, Scalar::all(255), 1);
+    }
+
+    // Count the pixels that don't agree
+    Mat Ixor;
+    bitwise_xor(I1, I2, Ixor);
+    int N = countNonZero(Ixor);
+
+    if (image)
+    {
+        Mat Ig;
+        if (image->channels() == 1)
+        {
+            cv::cvtColor(*image, *image, CV_GRAY2BGR);   
+        }
+        CV_Assert(image->isContinuous() && I1.isContinuous() && I2.isContinuous());
+        for (unsigned int i = 0; i < I1.total(); ++i)
+        {
+            uchar i1 = I1.data[i];
+            uchar i2 = I2.data[i];
+            if (i1 || i2)
+            {
+                image->data[3*i + 1] = 0;
+                if (i1) image->data[3*i] = 255;
+                else image->data[3*i] = 0;
+                if (i2) image->data[3*i + 2] = 255;
+                else image->data[3*i + 2] = 0;
+            }
+        }
+    }
+    
+    return N;
+}
+
+int LSD::showSegments(const std::string& name, cv::Size size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
+{
+    Mat img;
+    if (!image) img = Mat_<uchar>::zeros(size); 
+    else img = image->clone();
+    int n = compareSegments(size, lines1, lines2, &img);
+    imshow(name.c_str(), img);
+    return n;
 }
