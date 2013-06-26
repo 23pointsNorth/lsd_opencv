@@ -4,8 +4,6 @@
 #include <climits>
 #include <cfloat>
 
-#include <iostream> // !!!@!#!@#!@#!@#!@W
-
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp> // Only for imshow
 

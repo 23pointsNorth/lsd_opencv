@@ -1,14 +1,10 @@
-/*----------------------------------------------------------------------------*/
-/** @file lsd_opencv.h
-    LSD OpenCV module header
-    @author dani
- */
-/*----------------------------------------------------------------------------*/
-
-#ifndef LSD_OPENCV_H_
-#define LSD_OPENCV_H_
+#ifndef _OPENCV_LSD_HPP_
+#define _OPENCV_LSD_HPP_
+#ifdef __cplusplus
 
 #include <opencv2/core/core.hpp>
+
+namespace cv {
 
 class LSD
 {
@@ -238,4 +234,6 @@ private:
 
 };
 
-#endif /* !LSD_OPENCV_H_ */
+}
+#endif
+#endif
