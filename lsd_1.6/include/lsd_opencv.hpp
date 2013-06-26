@@ -61,8 +61,8 @@ public:
  *
  * @param image     The image, where lines will be drawn. 
  *                  Should have the size of the image, where the lines were found
- * @param lines1    The first lines that need to be drawn. Color - Red.
- * @param lines2    The second lines that need to be drawn. Color - Blue.
+ * @param lines1    The first lines that need to be drawn. Color - Blue.
+ * @param lines2    The second lines that need to be drawn. Color - Red.
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
     static int compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image = 0);
@@ -81,8 +81,8 @@ public:
  *
  * @param name      The name of the window where the lines will be shown.
  * @param size      The size that will be used to create an image to draw the lines, if no image is specified.
- * @param lines1    The lines that need to be drawn with red.
- * @param lines2    The lines that need to be drawn with blue.
+ * @param lines1    The lines that need to be drawn with blue.
+ * @param lines2    The lines that need to be drawn with red.
  * @param image     A optional pointer to an image that may be used as a background.
  * @return          The number of non overlapping pixels. 
  */    
@@ -100,6 +100,7 @@ private:
 
     int img_width;
     int img_height;
+    double LOG_NT;
 
     cv::Rect roi;
     int roix, roiy;
@@ -138,6 +139,13 @@ private:
         double dx,dy;             // (dx,dy) is vector oriented as the line segment
         double prec;              // tolerance angle
         double p;                 // probability of a point with angle within 'prec'
+
+        const char* operator << (const rect_s& r) const
+        {
+            std::string name = "Rect ";
+            name += x1; name += " ";
+            return name.c_str();
+        }
     } rect;
 
 /**
@@ -223,8 +231,9 @@ private:
  * Try some rectangles variations to improve NFA value. Only if the rectangle is not meaningful (i.e., log_nfa <= log_eps).
  * @return      The new NFA value.
  */
-    double rect_improve();
-
+    double rect_improve(rect& rec) const;
+    double rect_nfa(const rect& rec) const;
+    double nfa(const int& n, const int& k, const double& p) const;
 /** 
  * Is the point at place 'address' aligned to angle theta, up to precision 'prec'?
  * @return      Whether the point is aligned.

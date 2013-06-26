@@ -4,6 +4,8 @@
 #include <climits>
 #include <cfloat>
 
+#include <iostream>
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp> // Only for imshow
 
@@ -53,6 +55,48 @@ inline bool double_equal(const double& a, const double& b)
     return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
 
+bool AsmallerB_XoverY(const cv::Point& a, const cv::Point& b)
+{
+    if (a.x == b.x) return a.y < b.y;
+    else return a.x < b.x;
+}
+
+bool AsmallerB_YoverX(const cv::Point& a, const cv::Point& b)
+{
+    if (a.y == b.y) return a.x < b.x;
+    else return a.y < b.y;
+}
+
+/** 
+ *   Computes the natural logarithm of the absolute value of
+ *   the gamma function of x using Windschitl method.
+ *   See http://www.rskey.org/gamma.htm
+ */
+inline double log_gamma_windschitl(const double& x)
+{
+  return 0.918938533204673 + (x-0.5)*log(x) - x
+         + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)) );
+}
+
+/** 
+ *   Computes the natural logarithm of the absolute value of
+ *   the gamma function of x using the Lanczos approximation.
+ *   See http://www.rskey.org/gamma.htm
+ */
+inline double log_gamma_lanczos(const double& x)
+{
+    static double q[7] = { 75122.6331530, 80916.6278952, 36308.2951477,
+                         8687.24529705, 1168.92649479, 83.8676043424,
+                         2.50662827511 };
+    double a = (x + 0.5) * log(x + 5.5) - (x + 5.5);
+    double b = 0.0;
+    for(int n = 0;n < 7; ++n)
+    {
+        a -= log(x + double(n));
+        b += q[n] * pow(x, double(n));
+    }
+    return a + log(b);
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
@@ -129,8 +173,8 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
         ll_angle(rho, N_BINS, list);
     }
 
-    const double logNT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);
-    const int min_reg_size = int(-logNT/log10(p)); // minimal number of points in region that can give a meaningful event 
+    LOG_NT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);
+    const int min_reg_size = int(-LOG_NT/log10(p)); // minimal number of points in region that can give a meaningful event 
     
     // // Initialize region only when needed
     // Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
@@ -162,8 +206,8 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             }
 
             // Compute NFA
-            double log_nfa = rect_improve();
-            //if(log_nfa <= LOG_EPS) { continue; }
+            double log_nfa = rect_improve(rec);
+            if(log_nfa <= LOG_EPS) { continue; }
             
             // Found new line
             ++ls_count;
@@ -532,12 +576,227 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
     }
 
     return true;
+    }
+
+double LSD::rect_improve(rect& rec) const
+{
+    double delta = 0.5;
+    double delta_2 = delta / 2.0;
+
+    double log_nfa = rect_nfa(rec);
+
+    if(log_nfa > LOG_EPS) return log_nfa; //Good rectangle
+
+    // std::cout << "Log eps :" << LOG_EPS << "\n" <<log_nfa << std::endl;
+    // Try to improve
+    // Finer precision
+    rect r = rect(rec); // copy
+    for(int n = 0; n < 5; ++n)
+    {
+        r.p /= 2;
+        r.prec = r.p * M_PI;
+        double log_nfa_new = rect_nfa(r);
+        if(log_nfa_new > log_nfa)
+        {
+            log_nfa = log_nfa_new;
+            rec = rect(r);
+        }
+    }
+    // std::cout << "after: "<< log_nfa << std::endl;
+    if(log_nfa > LOG_EPS) return log_nfa;
+
+    // Try to reduce width
+    r = rect(rec);
+    for(unsigned int n = 0; n < 5; ++n)
+    {
+        if((r.width - delta) >= 0.5)
+        {
+            r.width -= delta;
+            double log_nfa_new = rect_nfa(r);
+            if(log_nfa_new > log_nfa)
+            {
+                rec = rect(r);
+                log_nfa = log_nfa_new;
+            }
+        }
+    }
+    // std::cout << "after: " << log_nfa << std::endl;
+
+    if(log_nfa > LOG_EPS) return log_nfa;
+
+    
+    // Try to reduce one side of rectangle
+    r = rect(rec);
+    for(unsigned int n = 0; n < 5; ++n)
+    {
+        if((r.width - delta) >= 0.5)
+        {
+            r.x1 += -r.dy * delta_2;
+            r.y1 +=  r.dx * delta_2;
+            r.x2 += -r.dy * delta_2;
+            r.y2 +=  r.dx * delta_2;
+            r.width -= delta;
+            double log_nfa_new = rect_nfa(r);
+            if(log_nfa_new > log_nfa)
+            {
+                rec = rect(r);
+                log_nfa = log_nfa_new;
+            }
+        }
+    }
+    // std::cout << "after: " << log_nfa << std::endl;
+
+    if(log_nfa > LOG_EPS) return log_nfa;
+
+    
+    // Try to reduce other side of rectangle
+    r = rect(rec);
+    for(unsigned int n = 0; n < 5; ++n)
+    {
+        if((r.width - delta) >= 0.5)
+        {
+            r.x1 -= -r.dy * delta_2;
+            r.y1 -=  r.dx * delta_2;
+            r.x2 -= -r.dy * delta_2;
+            r.y2 -=  r.dx * delta_2;
+            r.width -= delta;
+            double log_nfa_new = rect_nfa(r);
+            if(log_nfa_new > log_nfa)
+            {
+                rec = rect(r);
+                log_nfa = log_nfa_new;
+            }
+        }
+    }
+    // std::cout << "after: " << log_nfa << std::endl;
+
+    if(log_nfa > LOG_EPS) return log_nfa;
+
+    
+    // Try finer precision
+    r = rect(rec);
+    for(unsigned int n = 0; n < 5; ++n)
+    {
+        if((r.width - delta) >= 0.5)
+        {
+            r.p /= 2;
+            r.prec = r.p * M_PI;
+            double log_nfa_new = rect_nfa(r);
+            if(log_nfa_new > log_nfa)
+            {
+                rec = rect(r);
+                log_nfa = log_nfa_new;
+            }
+        }
+    }
+    // std::cout << log_nfa << std::endl;
+    
+    // std::cout << "Bla ----------------" << std::endl;
+    return log_nfa;
 }
 
-double LSD::rect_improve()
+double LSD::rect_nfa(const rect& rec) const
 {
-    // test return
-    return LOG_EPS;
+    int total_pts = 0, alg_pts = 0;
+    
+    // Order rec points for traversal by prioritizing x and then y
+    vector<Point> ordered_x(4);
+    vector<Point> ordered_y(4);
+    ordered_y[0].x = ordered_x[0].x = rec.x1 - rec.dy * rec.width / 2.0;
+    ordered_y[0].y = ordered_x[0].y = rec.y1 + rec.dx * rec.width / 2.0;
+    ordered_y[1].x = ordered_x[1].x = rec.x2 - rec.dy * rec.width / 2.0;
+    ordered_y[1].y = ordered_x[1].y = rec.y2 + rec.dx * rec.width / 2.0;
+    ordered_y[2].x = ordered_x[2].x = rec.x2 + rec.dy * rec.width / 2.0;
+    ordered_y[2].y = ordered_x[2].y = rec.y2 - rec.dx * rec.width / 2.0;
+    ordered_y[3].x = ordered_x[3].x = rec.x1 + rec.dy * rec.width / 2.0;
+    ordered_y[3].y = ordered_x[3].y = rec.y1 - rec.dx * rec.width / 2.0;
+
+    std::sort(ordered_x.begin(), ordered_x.end(), AsmallerB_XoverY);
+    std::sort(ordered_y.begin(), ordered_y.end(), AsmallerB_YoverX);
+
+    // std::cout << " ---- " << std::endl;
+    // std::cout << ordered_x[0].x << " "<< ordered_x[1].x << " "<< ordered_x[2].x << " "<< ordered_x[3].x << std::endl;
+    // std::cout << ordered_y[0].y << " "<< ordered_y[1].y << " "<< ordered_y[2].y << " "<< ordered_y[3].y << std::endl;
+    double y_max = ordered_x[0].y;
+    double y_min = ordered_x[0].y;
+    double up_step = (ordered_x[0].x != ordered_y[0].x)?
+                        double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[0].x):
+                        double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
+    double down_step = (ordered_x[0].x != ordered_y[3].x)?
+                        (ordered_x[0].y - ordered_y[3].y) / (ordered_x[0].x - ordered_y[3].x):
+                        double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
+    for(int x = ordered_x[0].x; x < ordered_x[3].x; ++x)
+    { 
+        if (y_max < ordered_x[0].y) 
+        {
+            up_step = double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
+        }
+        y_max += up_step;
+
+        if (y_min > ordered_x[3].y) 
+        {
+            down_step = double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
+        }
+        y_min += down_step;
+
+        int up_iter = std::min(int(y_max), img_height);
+        for(int y = std::max(int(y_min), 0); y < up_iter; ++y)
+        {
+            ++total_pts;
+            if(isAligned(x + y * img_width, rec.theta, rec.prec))
+            {
+                ++alg_pts;
+            }
+        }
+    }
+    return nfa(total_pts, alg_pts, rec.p);
+}
+
+double LSD::nfa(const int& n, const int& k, const double& p) const
+{
+    static double inv[TABSIZE];
+    
+    //Trivial cases
+    if(n == 0 || k == 0) { return -LOG_NT; }  
+    if(n == k) { return -LOG_NT - double(n) * log10(p); }
+
+    double p_term = p / (1 - p);
+
+    double log1term = (double(n) + 1) - log_gamma(double(k) + 1)
+                - log_gamma(double(n-k) + 1)
+                + double(k) * log(p) + double(n-k) * log(1.0 - p);
+    double term = exp(log1term);
+
+    // If enough computation in the inv have been made
+    if(double_equal(term, 0.0))              
+    {
+        if(double(k) > double(n * p))    
+            return -log1term / M_LN10 - LOG_NT;  // end of tail - use just the first term
+        else
+            return -LOG_NT;                      // begin of tail - the tail is roughly 1
+    }
+
+    // Compute more terms if needed
+    double bin_tail = term;
+    double tolerance = 0.1; // an error of 10% in the result is accepted
+    for(unsigned int i = k + 1; i <= n; ++i)
+    {
+        double bin_term = double(n-i+1) * ((i < TABSIZE)?
+                       (inv[i] != 0 ? inv[i] : ( inv[i] = 1.0 / double(i))):
+                       1.0 / double(i));
+
+        double mult_term = bin_term * p_term;
+        term *= mult_term;
+        bin_tail += term;
+        if(bin_term < 1)
+        {
+            double err = term * ( ( 1.0 - pow( mult_term, (double) (n-i+1) ) ) /
+                         (1.0-mult_term) - 1.0 );
+            if( err < tolerance * fabs(-log10(bin_tail)-LOG_NT) * bin_tail ) break;
+        }
+
+    }
+    return -log10(bin_tail) - LOG_NT;
 }
 
 inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
