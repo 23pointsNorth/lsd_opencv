@@ -271,7 +271,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     CV_Assert(scaled_image.isContinuous() && 
               modgrad.isContinuous() && 
               angles.isContinuous());   // Accessing image data linearly
-    double max_grad = 0.0;
+    double max_grad = -1;
     for(int y = 0; y < img_height - 1; ++y)
     {
         for(int addr = y * img_width, addr_end = addr + img_width - 1; addr < addr_end; ++addr)
@@ -302,7 +302,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     vector<coorlist*> range_s(n_bins);
     vector<coorlist*> range_e(n_bins);
     unsigned int count = 0;
-    double bin_coef = double(n_bins - 1) / max_grad;
+    double bin_coef = (max_grad > 0)?double(n_bins - 1) / max_grad:0; //if all image is smooth, max_grad <= 0
 
     for(int y = 0; y < img_height - 1; ++y)
     {
