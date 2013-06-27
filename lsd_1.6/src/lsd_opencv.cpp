@@ -719,36 +719,43 @@ double LSD::rect_nfa(const rect& rec) const
     // std::cout << ordered_y[0].y << " "<< ordered_y[1].y << " "<< ordered_y[2].y << " "<< ordered_y[3].y << std::endl;
     double y_max = ordered_x[0].y;
     double y_min = ordered_x[0].y;
-    double up_step = (ordered_x[0].x != ordered_y[0].x)?
+    double up_step = (ordered_x[0].x != ordered_y[0].x)?        // if == already going down on side - avoiding division by 0
                         double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[0].x):
                         double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
     double down_step = (ordered_x[0].x != ordered_y[3].x)?
-                        (ordered_x[0].y - ordered_y[3].y) / (ordered_x[0].x - ordered_y[3].x):
+                        double(ordered_x[0].y - ordered_y[3].y) / (ordered_x[0].x - ordered_y[3].x):
                         double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
-    for(int x = ordered_x[0].x; x < ordered_x[3].x; ++x)
+    // std::cout << "Up step: " << up_step << " down step: " << down_step << std::endl; 
+    bool up_updated = false, down_updated = false;
+    for(int i = ordered_x[0].x; i <= ordered_x[3].x; ++i)
     { 
-        if (y_max < ordered_x[0].y) 
-        {
-            up_step = double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
-        }
-        y_max += up_step;
-
-        if (y_min > ordered_x[3].y) 
-        {
-            down_step = double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
-        }
-        y_min += down_step;
-
-        int up_iter = std::min(int(y_max), img_height);
-        for(int y = std::max(int(y_min), 0); y < up_iter; ++y)
+        int up_iter = std::min(int(y_max), img_height - 1);
+        for(int j = std::max(int(y_min), 0); j <= up_iter; ++j)
         {
             ++total_pts;
-            if(isAligned(x + y * img_width, rec.theta, rec.prec))
+            if(isAligned(i + j * img_width, rec.theta, rec.prec))
             {
                 ++alg_pts;
             }
         }
+
+        //Update pointers
+        if (y_max < ordered_x[0].y && !up_updated) 
+        {
+            up_step = double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
+            up_updated = true;
+        }
+        y_max += up_step;
+
+        if (y_min > ordered_x[3].y && !down_updated) 
+        {
+            down_step = double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
+            down_updated = true;
+        }
+        y_min += down_step;
+
     }
+    // std::cout << "All: " << total_pts << " aligned " << alg_pts << std::endl; 
     return nfa(total_pts, alg_pts, rec.p);
 }
 
@@ -784,7 +791,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
         double bin_term = double(n-i+1) * ((i < TABSIZE)?
                        (inv[i] != 0 ? inv[i] : ( inv[i] = 1.0 / double(i))):
                        1.0 / double(i));
-
+        if (inv[i] == 0)  std::cout << "NOT NULLLLLLWSALFDKDGH" << std::endl;
         double mult_term = bin_term * p_term;
         term *= mult_term;
         bin_tail += term;
@@ -792,7 +799,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
         {
             double err = term * ( ( 1.0 - pow( mult_term, (double) (n-i+1) ) ) /
                          (1.0-mult_term) - 1.0 );
-            if( err < tolerance * fabs(-log10(bin_tail)-LOG_NT) * bin_tail ) break;
+            if(err < tolerance * fabs(-log10(bin_tail) - LOG_NT) * bin_tail) break;
         }
 
     }
