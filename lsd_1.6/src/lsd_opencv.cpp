@@ -207,7 +207,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
 
             // Compute NFA
             double log_nfa = rect_improve(rec);
-            if(log_nfa <= LOG_EPS) { continue; }
+            //if(log_nfa <= LOG_EPS) { continue; }
             
             // Found new line
             ++ls_count;
