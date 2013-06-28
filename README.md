@@ -23,13 +23,26 @@ Extra
 Compile
 -----
 On linux, navigate to the lsd_1.6 directory and execute
+
 mkdir build
 cd build/
 cmake ..
 make
 
 
-Todo:
+Use
 -----
-	*	Start converting lsd.cpp to lsd_opencv.cpp
-	*
+To use the OpenCV LSD, create and LSD object, calling detect with the input image and a vector of lines.
+
+
+Testing
+-----
+To test the difference between the standard and the converted algorithm, run
+
+./visual_test ./../images/any-image
+
+to test the algorithm in specific cases, use the 
+
+./accuracy_test
+
+It will run the code against a set of predefined cases.

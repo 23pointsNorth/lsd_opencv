@@ -74,8 +74,8 @@ bool AsmallerB_YoverX(const cv::Point& a, const cv::Point& b)
  */
 inline double log_gamma_windschitl(const double& x)
 {
-  return 0.918938533204673 + (x-0.5)*log(x) - x
-         + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)) );
+    return 0.918938533204673 + (x-0.5)*log(x) - x
+         + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)));
 }
 
 /** 
@@ -200,15 +200,15 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             rect rec;
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
-            if (doRefine)
+            double log_nfa = 0;
+            if(doRefine)
             {
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
-            }
 
-            // Compute NFA
-            double log_nfa = rect_improve(rec);
-            //if(log_nfa <= LOG_EPS) { continue; }
-            
+                // Compute NFA
+                log_nfa = rect_improve(rec);
+                //if(log_nfa <= LOG_EPS) { continue; }
+            }
             // Found new line
             ++ls_count;
 
@@ -224,7 +224,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
                 rec.width /= SCALE;
             }
             
-            if (roi.area()) // if a roi has been given by the user, adjust coordinates
+            if(roi.area()) // if a roi has been given by the user, adjust coordinates
             {
                 rec.x1 += roix;
                 rec.y1 += roiy;
@@ -520,7 +520,7 @@ bool LSD::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
     }
     double mean_angle = sum / double(n);
     // 2 * standard deviation
-    double tau = 2.0 * sqrt((s_sum - 2.0 * mean_angle * sum) / double(n) + mean_angle * mean_angle ); 
+    double tau = 2.0 * sqrt((s_sum - 2.0 * mean_angle * sum) / double(n) + mean_angle * mean_angle); 
 
     // Try new region
     region_grow(Point(reg[0].x, reg[0].y), reg, reg_size, reg_angle, tau);
@@ -797,8 +797,8 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
         bin_tail += term;
         if(bin_term < 1)
         {
-            double err = term * ( ( 1.0 - pow( mult_term, (double) (n-i+1) ) ) /
-                         (1.0-mult_term) - 1.0 );
+            double err = term * ((1.0 - pow(mult_term, double(n-i+1))) /
+                         (1.0-mult_term) - 1.0);
             if(err < tolerance * fabs(-log10(bin_tail) - LOG_NT) * bin_tail) break;
         }
 
@@ -817,7 +817,7 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
     if(n_theta > M_3_2_PI)
     {
         n_theta -= M_2__PI;
-        if( n_theta < 0.0 ) n_theta = -n_theta;
+        if(n_theta < 0.0) n_theta = -n_theta;
     }
 
     return n_theta <= prec;
