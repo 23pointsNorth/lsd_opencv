@@ -207,7 +207,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
 
                 // Compute NFA
                 log_nfa = rect_improve(rec);
-                //if(log_nfa <= LOG_EPS) { continue; }
+                if(log_nfa <= LOG_EPS) { continue; }
             }
             // Found new line
             ++ls_count;
@@ -371,29 +371,29 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
         int yy_min = std::max(rpoint.y - 1, 0), yy_max = std::min(rpoint.y + 1, img_height - 1);
         for(int yy = yy_min; yy <= yy_max; ++yy)
         {
-                int c_addr = xx_min + yy * img_width;
-                for(int xx = xx_min; xx <= xx_max; ++xx, ++c_addr)
+            int c_addr = xx_min + yy * img_width;
+            for(int xx = xx_min; xx <= xx_max; ++xx, ++c_addr)
+            {
+                if((used.data[c_addr] != USED) &&
+                   (isAligned(c_addr, reg_angle, prec)))
                 {
-                    if((used.data[c_addr] != USED) &&
-                       (isAligned(c_addr, reg_angle, prec)))
-                    {
-                        // Add point
-                        used.data[c_addr] = USED;
-                        RegionPoint& region_point = reg[reg_size];
-                        region_point.x = xx;
-                        region_point.y = yy;
-                        region_point.used = &(used.data[c_addr]);
-                        region_point.modgrad = modgrad_data[c_addr];
-                        const double& angle = angles_data[c_addr];
-                        region_point.angle = angle;
-                        ++reg_size;
+                    // Add point
+                    used.data[c_addr] = USED;
+                    RegionPoint& region_point = reg[reg_size];
+                    region_point.x = xx;
+                    region_point.y = yy;
+                    region_point.used = &(used.data[c_addr]);
+                    region_point.modgrad = modgrad_data[c_addr];
+                    const double& angle = angles_data[c_addr];
+                    region_point.angle = angle;
+                    ++reg_size;
 
-                        // Update region's angle
-                        sumdx += cos(float(angle));
-                        sumdy += sin(float(angle));
-                        // reg_angle is used in the isAligned, so it needs to be updates?
-                        reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
-                    }
+                    // Update region's angle
+                    sumdx += cos(float(angle));
+                    sumdy += sin(float(angle));
+                    // reg_angle is used in the isAligned, so it needs to be updates?
+                    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
+                }
             }
         }
     }
@@ -714,7 +714,9 @@ double LSD::rect_nfa(const rect& rec) const
     std::sort(ordered_x.begin(), ordered_x.end(), AsmallerB_XoverY);
     std::sort(ordered_y.begin(), ordered_y.end(), AsmallerB_YoverX);
 
-    // std::cout << " ---- " << std::endl;
+    // std::cout << std::endl << " ---- " << std::endl;
+    // std::cout << "X-order " <<ordered_x[0] << " "<< ordered_x[1] << " "<< ordered_x[2] << " "<< ordered_x[3] << std::endl;
+    // std::cout << "Y-order " <<ordered_y[0] << " "<< ordered_y[1] << " "<< ordered_y[2] << " "<< ordered_y[3] << std::endl;
     // std::cout << ordered_x[0].x << " "<< ordered_x[1].x << " "<< ordered_x[2].x << " "<< ordered_x[3].x << std::endl;
     // std::cout << ordered_y[0].y << " "<< ordered_y[1].y << " "<< ordered_y[2].y << " "<< ordered_y[3].y << std::endl;
     double y_max = ordered_x[0].y;
@@ -723,16 +725,20 @@ double LSD::rect_nfa(const rect& rec) const
                         double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[0].x):
                         double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
     double down_step = (ordered_x[0].x != ordered_y[3].x)?
-                        double(ordered_x[0].y - ordered_y[3].y) / (ordered_x[0].x - ordered_y[3].x):
+                        double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[3].x):
                         double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
     // std::cout << "Up step: " << up_step << " down step: " << down_step << std::endl; 
     bool up_updated = false, down_updated = false;
     for(int i = ordered_x[0].x; i <= ordered_x[3].x; ++i)
     { 
-        int up_iter = std::min(int(y_max), img_height - 1);
-        for(int j = std::max(int(y_min), 0); j <= up_iter; ++j)
+        int up_iter = std::min(int(y_max), img_height);
+        int lower_iter = std::max(int(y_min), 0);
+        // std::cout << "\nx: " << i << " lower_iter " << lower_iter << " up_iter " << up_iter << std::endl;
+        
+        for(int j = lower_iter; j <= up_iter; ++j)
         {
             ++total_pts;
+            // std::cout << "[" << i << " " << j << "] ";
             if(isAligned(i + j * img_width, rec.theta, rec.prec))
             {
                 ++alg_pts;
