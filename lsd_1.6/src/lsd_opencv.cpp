@@ -698,18 +698,18 @@ double LSD::rect_improve(rect& rec) const
 double LSD::rect_nfa(const rect& rec) const
 {
     int total_pts = 0, alg_pts = 0;
-    
+    double half_width = rec.width / 2.0;
     // Order rec points for traversal by prioritizing x and then y
     vector<Point> ordered_x(4);
     vector<Point> ordered_y(4);
-    ordered_y[0].x = ordered_x[0].x = rec.x1 - rec.dy * rec.width / 2.0;
-    ordered_y[0].y = ordered_x[0].y = rec.y1 + rec.dx * rec.width / 2.0;
-    ordered_y[1].x = ordered_x[1].x = rec.x2 - rec.dy * rec.width / 2.0;
-    ordered_y[1].y = ordered_x[1].y = rec.y2 + rec.dx * rec.width / 2.0;
-    ordered_y[2].x = ordered_x[2].x = rec.x2 + rec.dy * rec.width / 2.0;
-    ordered_y[2].y = ordered_x[2].y = rec.y2 - rec.dx * rec.width / 2.0;
-    ordered_y[3].x = ordered_x[3].x = rec.x1 + rec.dy * rec.width / 2.0;
-    ordered_y[3].y = ordered_x[3].y = rec.y1 - rec.dx * rec.width / 2.0;
+    ordered_y[0].x = ordered_x[0].x = rec.x1 - rec.dy * half_width;
+    ordered_y[0].y = ordered_x[0].y = rec.y1 + rec.dx * half_width;
+    ordered_y[1].x = ordered_x[1].x = rec.x2 - rec.dy * half_width;
+    ordered_y[1].y = ordered_x[1].y = rec.y2 + rec.dx * half_width;
+    ordered_y[2].x = ordered_x[2].x = rec.x2 + rec.dy * half_width;
+    ordered_y[2].y = ordered_x[2].y = rec.y2 - rec.dx * half_width;
+    ordered_y[3].x = ordered_x[3].x = rec.x1 + rec.dy * half_width;
+    ordered_y[3].y = ordered_x[3].y = rec.y1 - rec.dx * half_width;
 
     std::sort(ordered_x.begin(), ordered_x.end(), AsmallerB_XoverY);
     std::sort(ordered_y.begin(), ordered_y.end(), AsmallerB_YoverX);
@@ -734,12 +734,13 @@ double LSD::rect_nfa(const rect& rec) const
         int up_iter = std::min(int(y_max), img_height);
         int lower_iter = std::max(int(y_min), 0);
         // std::cout << "\nx: " << i << " lower_iter " << lower_iter << " up_iter " << up_iter << std::endl;
-        
-        for(int j = lower_iter; j <= up_iter; ++j)
+        int addr = i + lower_iter * img_width;
+        for(int j = lower_iter; j <= up_iter; ++j, addr += img_width)
         {
             ++total_pts;
             // std::cout << "[" << i << " " << j << "] ";
-            if(isAligned(i + j * img_width, rec.theta, rec.prec))
+            //if(isAligned(i + j * img_width, rec.theta, rec.prec))
+            if(isAligned(addr, rec.theta, rec.prec))
             {
                 ++alg_pts;
             }
@@ -767,8 +768,6 @@ double LSD::rect_nfa(const rect& rec) const
 
 double LSD::nfa(const int& n, const int& k, const double& p) const
 {
-    static double inv[TABSIZE];
-    
     //Trivial cases
     if(n == 0 || k == 0) { return -LOG_NT; }  
     if(n == k) { return -LOG_NT - double(n) * log10(p); }
@@ -794,10 +793,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
     double tolerance = 0.1; // an error of 10% in the result is accepted
     for(unsigned int i = k + 1; i <= n; ++i)
     {
-        double bin_term = double(n-i+1) * ((i < TABSIZE)?
-                       (inv[i] != 0 ? inv[i] : ( inv[i] = 1.0 / double(i))):
-                       1.0 / double(i));
-        if (inv[i] == 0)  std::cout << "NOT NULLLLLLWSALFDKDGH" << std::endl;
+        double bin_term = double(n-i+1) / double(i);
         double mult_term = bin_term * p_term;
         term *= mult_term;
         bin_tail += term;
