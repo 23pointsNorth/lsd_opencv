@@ -25,6 +25,10 @@
 
 const double DEG_TO_RADS = M_PI / 180;
 
-#define TABSIZE		100000
-
 #define log_gamma(x) ((x)>15.0?log_gamma_windschitl(x):log_gamma_lanczos(x))
+
+struct edge
+{
+    cv::Point p;
+    bool taken;
+};

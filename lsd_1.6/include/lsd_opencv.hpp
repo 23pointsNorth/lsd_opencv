@@ -139,13 +139,6 @@ private:
         double dx,dy;             // (dx,dy) is vector oriented as the line segment
         double prec;              // tolerance angle
         double p;                 // probability of a point with angle within 'prec'
-
-        const char* operator << (const rect_s& r) const
-        {
-            std::string name = "Rect ";
-            name += x1; name += " ";
-            return name.c_str();
-        }
     } rect;
 
 /**

@@ -55,16 +55,10 @@ inline bool double_equal(const double& a, const double& b)
     return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
 
-bool AsmallerB_XoverY(const cv::Point& a, const cv::Point& b)
+bool AsmallerB_XoverY(const edge& a, const edge& b)
 {
-    if (a.x == b.x) return a.y < b.y;
-    else return a.x < b.x;
-}
-
-bool AsmallerB_YoverX(const cv::Point& a, const cv::Point& b)
-{
-    if (a.y == b.y) return a.x < b.x;
-    else return a.y < b.y;
+    if (a.p.x == b.p.x) return a.p.y < b.p.y;
+    else return a.p.x < b.p.x;
 }
 
 /** 
@@ -556,7 +550,7 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
         // remove points from the region and update 'used' map 
         for(int i = 0; i < reg_size; ++i)
         {
-            if(distSq( xc, yc, double(reg[i].x), double(reg[i].y)) > radSq)
+            if(distSq(xc, yc, double(reg[i].x), double(reg[i].y)) > radSq)
             {
                 // Remove point from the region 
                 *(reg[i].used) = NOTUSED;
@@ -691,7 +685,7 @@ double LSD::rect_improve(rect& rec) const
     }
     // std::cout << log_nfa << std::endl;
     
-    // std::cout << "Bla ----------------" << std::endl;
+    // std::cout << "----------------" << std::endl;
     return log_nfa;
 }
 
@@ -699,70 +693,121 @@ double LSD::rect_nfa(const rect& rec) const
 {
     int total_pts = 0, alg_pts = 0;
     double half_width = rec.width / 2.0;
-    // Order rec points for traversal by prioritizing x and then y
-    vector<Point> ordered_x(4);
-    vector<Point> ordered_y(4);
-    ordered_y[0].x = ordered_x[0].x = rec.x1 - rec.dy * half_width;
-    ordered_y[0].y = ordered_x[0].y = rec.y1 + rec.dx * half_width;
-    ordered_y[1].x = ordered_x[1].x = rec.x2 - rec.dy * half_width;
-    ordered_y[1].y = ordered_x[1].y = rec.y2 + rec.dx * half_width;
-    ordered_y[2].x = ordered_x[2].x = rec.x2 + rec.dy * half_width;
-    ordered_y[2].y = ordered_x[2].y = rec.y2 - rec.dx * half_width;
-    ordered_y[3].x = ordered_x[3].x = rec.x1 + rec.dy * half_width;
-    ordered_y[3].y = ordered_x[3].y = rec.y1 - rec.dx * half_width;
+    double dyhw = rec.dy * half_width;
+    double dxhw = rec.dx * half_width;
 
+    std::vector<edge> ordered_x(4);
+    edge* min_y = &ordered_x[0];
+    edge* max_y = &ordered_x[0]; //will be used for loop range
+
+    ordered_x[0].p.x = rec.x1 - dyhw; ordered_x[0].p.y = rec.y1 + dxhw; ordered_x[0].taken = false;
+    ordered_x[1].p.x = rec.x2 - dyhw; ordered_x[1].p.y = rec.y2 + dxhw; ordered_x[1].taken = false;
+    ordered_x[2].p.x = rec.x2 + dyhw; ordered_x[2].p.y = rec.y2 - dxhw; ordered_x[2].taken = false;
+    ordered_x[3].p.x = rec.x1 + dyhw; ordered_x[3].p.y = rec.y1 - dxhw; ordered_x[3].taken = false;
+    
     std::sort(ordered_x.begin(), ordered_x.end(), AsmallerB_XoverY);
-    std::sort(ordered_y.begin(), ordered_y.end(), AsmallerB_YoverX);
+    // std::cout << " " << ordered_x[0].p;
+    // std::cout << " " << ordered_x[1].p;
+    // std::cout << " " << ordered_x[2].p;
+    // std::cout << " " << ordered_x[3].p << std::endl;
+    // std::cout << " Sorted!" << std::endl;
 
-    // std::cout << std::endl << " ---- " << std::endl;
-    // std::cout << "X-order " <<ordered_x[0] << " "<< ordered_x[1] << " "<< ordered_x[2] << " "<< ordered_x[3] << std::endl;
-    // std::cout << "Y-order " <<ordered_y[0] << " "<< ordered_y[1] << " "<< ordered_y[2] << " "<< ordered_y[3] << std::endl;
-    // std::cout << ordered_x[0].x << " "<< ordered_x[1].x << " "<< ordered_x[2].x << " "<< ordered_x[3].x << std::endl;
-    // std::cout << ordered_y[0].y << " "<< ordered_y[1].y << " "<< ordered_y[2].y << " "<< ordered_y[3].y << std::endl;
-    double y_max = ordered_x[0].y;
-    double y_min = ordered_x[0].y;
-    double up_step = (ordered_x[0].x != ordered_y[0].x)?        // if == already going down on side - avoiding division by 0
-                        double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[0].x):
-                        double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
-    double down_step = (ordered_x[0].x != ordered_y[3].x)?
-                        double(ordered_x[0].y - ordered_y[0].y) / (ordered_x[0].x - ordered_y[3].x):
-                        double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
-    // std::cout << "Up step: " << up_step << " down step: " << down_step << std::endl; 
-    bool up_updated = false, down_updated = false;
-    for(int i = ordered_x[0].x; i <= ordered_x[3].x; ++i)
-    { 
-        int up_iter = std::min(int(y_max), img_height);
-        int lower_iter = std::max(int(y_min), 0);
-        // std::cout << "\nx: " << i << " lower_iter " << lower_iter << " up_iter " << up_iter << std::endl;
-        int addr = i + lower_iter * img_width;
-        for(int j = lower_iter; j <= up_iter; ++j, addr += img_width)
+    //find min y. And mark as taken. find max y.
+    for(unsigned int i = 1; i < 4; ++i)
+    {
+        if(min_y->p.y > ordered_x[i].p.y) {min_y = &ordered_x[i]; }
+        if(max_y->p.y < ordered_x[i].p.y) {max_y = &ordered_x[i]; }
+    }
+    min_y->taken = true;
+
+    //find leftmost untaken point;
+    edge* leftmost = 0;
+    for(unsigned int i = 0; i < 4; ++i)
+    {
+        if(!ordered_x[i].taken)
         {
+            if(!leftmost) // if uninitialized 
+            {
+                leftmost = &ordered_x[i];
+            }
+            else if (leftmost->p.x > ordered_x[i].p.x)
+            {
+                leftmost = &ordered_x[i];
+            }
+        }
+    }
+    leftmost->taken = true;
+
+    //find rightmost untaken point;
+    edge* rightmost = 0;
+    for(unsigned int i = 0; i < 4; ++i)
+    {
+        if(!ordered_x[i].taken)
+        {
+            if(!rightmost) // if uninitialized 
+            {
+                rightmost = &ordered_x[i];
+            }
+            else if (rightmost->p.x < ordered_x[i].p.x)
+            {
+                rightmost = &ordered_x[i];
+            }
+        }
+    }
+    rightmost->taken = true;
+
+    //find last untaken point;
+    edge* tailp = 0;
+    for(unsigned int i = 0; i < 4; ++i)
+    {
+        if(!ordered_x[i].taken)
+        {
+            if(!tailp) // if uninitialized 
+            {
+                tailp = &ordered_x[i];
+            }
+            else if (tailp->p.x > ordered_x[i].p.x)
+            {
+                tailp = &ordered_x[i];
+            }
+        }
+    }
+    tailp->taken = true;
+
+    // std::cout << "min_y " << min_y->p << " leftmost " << leftmost->p << " rightmost " << rightmost->p << " tailp " << tailp->p << std::endl; 
+
+    double flstep = (min_y->p.y != leftmost->p.y) ? (min_y->p.x - leftmost->p.x) / (min_y->p.y - leftmost->p.y) : 0; //first left step
+    double slstep = (leftmost->p.y != tailp->p.x) ? (leftmost->p.x - tailp->p.x) / (leftmost->p.y - tailp->p.x) : 0; //second left step
+    
+    double frstep = (min_y->p.y != rightmost->p.y) ? (min_y->p.x - rightmost->p.x) / (min_y->p.y - rightmost->p.y) : 0; //first right step
+    double srstep = (rightmost->p.y != tailp->p.x) ? (rightmost->p.x - tailp->p.x) / (rightmost->p.y - tailp->p.x) : 0; //second right step
+    
+    double lstep = flstep, rstep = frstep;
+
+    int left_x = min_y->p.x, right_x = min_y->p.x; 
+        
+    for(int y = min_y->p.y; y <= max_y->p.y; ++y)
+    {
+        // std::cout << "y: " << y << " - ";
+        int adx = y * img_width + left_x;
+        for(int x = left_x; x <= right_x; ++x, ++adx)
+        {
+            // std::cout << x << "; ";
             ++total_pts;
-            // std::cout << "[" << i << " " << j << "] ";
-            //if(isAligned(i + j * img_width, rec.theta, rec.prec))
-            if(isAligned(addr, rec.theta, rec.prec))
+            if(isAligned(adx, rec.theta, rec.prec))
             {
                 ++alg_pts;
             }
         }
+        // std::cout << std::endl;
 
-        //Update pointers
-        if (y_max < ordered_x[0].y && !up_updated) 
-        {
-            up_step = double(ordered_y[0].y - ordered_x[3].y) / (ordered_y[0].x - ordered_x[3].x);
-            up_updated = true;
-        }
-        y_max += up_step;
+        if(y >= leftmost->p.y) { lstep = slstep; }
+        if(y >= rightmost->p.y) { rstep = srstep; }
 
-        if (y_min > ordered_x[3].y && !down_updated) 
-        {
-            down_step = double(ordered_y[3].y - ordered_x[3].y) / (ordered_y[3].x - ordered_x[3].x);
-            down_updated = true;
-        }
-        y_min += down_step;
-
+        left_x += lstep;
+        right_x += rstep;
     }
-    // std::cout << "All: " << total_pts << " aligned " << alg_pts << std::endl; 
+    // std::cout << "All: " << total_pts << " aligned " << alg_pts << std::endl;
     return nfa(total_pts, alg_pts, rec.p);
 }
 
