@@ -14,3 +14,6 @@ target_link_libraries(houghlines_cmp ${OpenCV_LIBS})
 
 add_executable(accuracy_test accuracy_test.cpp)
 target_link_libraries(accuracy_test ${OpenCV_LIBS} lsd_opencv)
+
+add_executable(perf_test perf_test.cpp)
+target_link_libraries(perf_test ${OpenCV_LIBS} lsd_opencv lsd_wrap)

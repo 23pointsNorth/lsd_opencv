@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <chrono>
+
 #include "lsd_wrap.hpp"
 #include "lsd_opencv.hpp"
 #include "opencv2/core/core.hpp"
@@ -14,7 +15,7 @@ int main(int argc, char** argv)
 {
 	if (argc != 2) 
 	{
-		std::cout << "lsd_opencv_cmd [in]" << std::endl
+		std::cout << "visual_test [in]" << std::endl
 			<< "\tin - input image" << std::endl;
 		return false;
 	}
