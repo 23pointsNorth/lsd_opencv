@@ -84,7 +84,7 @@ inline double log_gamma_lanczos(const double& x)
                          2.50662827511 };
     double a = (x + 0.5) * log(x + 5.5) - (x + 5.5);
     double b = 0.0;
-    for(int n = 0;n < 7; ++n)
+    for(int n = 0; n < 7; ++n)
     {
         a -= log(x + double(n));
         b += q[n] * pow(x, double(n));
@@ -93,12 +93,13 @@ inline double log_gamma_lanczos(const double& x)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LSD::LSD(double _scale, int _subdivision, bool _refine, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
+LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
     CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
               _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
               _n_bins > 0 && _subdivision > 0);
+    if(_subdivision != 1) { std::cout << "Warning! Subdivision != 1 not implemented. Using 1." << std::endl; }
 }
 
 void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi,
@@ -201,7 +202,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
 
                 // Compute NFA
                 log_nfa = rect_improve(rec);
-                if(log_nfa <= LOG_EPS) { continue; }
+                //if(log_nfa <= LOG_EPS) { continue; }
             }
             // Found new line
             ++ls_count;

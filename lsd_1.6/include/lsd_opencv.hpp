@@ -12,11 +12,11 @@ public:
 /**
  * Create an LSD object. Specifying scale, number of subdivisions for the image, should the lines be refined and other constants as follows:
  *
- * @param _scale        The scale of the image that will be used to find the lines. Range (0..1].
- * @param _subdivision  The factor by which each dimension of the image will be divided into. 2 -> generates 2x2 rois and finds lines in them.
- *                      Note: Using smalled images (higher subdivision factor) will find fines lines.
  * @param _refine       Should the lines found be refined? E.g. breaking arches into smaller line approximations. 
  *                      If disabled, execution is faster.
+ * @param _subdivision  The factor by which each dimension of the image will be divided into. 2 -> generates 2x2 rois and finds lines in them.
+ *                      Note: Using smalled images (higher subdivision factor) will find fines lines.
+ * @param _scale        The scale of the image that will be used to find the lines. Range (0..1].
  * @param _sigma_scale  Sigma for Gaussian filter is computed as sigma = _sigma_scale/_scale.
  * @param _quant        Bound to the quantization error on the gradient norm. 
  * @param _ang_th       Gradient angle tolerance in degrees.
@@ -24,7 +24,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    LSD(double _scale = 0.8, int _subdivision = 1, bool _refine = true, 
+    LSD(bool _refine = true, int _subdivision = 1, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 /**
