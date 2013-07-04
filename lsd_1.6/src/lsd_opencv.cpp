@@ -68,8 +68,8 @@ bool AsmallerB_XoverY(const edge& a, const edge& b)
  */
 inline double log_gamma_windschitl(const double& x)
 {
-    return 0.918938533204673 + (x-0.5)*log(x) - x
-         + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)));
+    return 0.918938533204673 + (x - 0.5) * log(x) - x
+         + 0.5*x*log(x*sinh(1/x) + 1/(810.0 * pow(x, 6)));
 }
 
 /** 
@@ -87,14 +87,14 @@ inline double log_gamma_lanczos(const double& x)
     for(int n = 0; n < 7; ++n)
     {
         a -= log(x + double(n));
-        b += q[n] * pow(x, double(n));
+        b += q[n] * pow(x, n);
     }
     return a + log(b);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
-        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
+LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, double _ang_th, double _nfa_orient_thr, double _density_th, int _n_bins)
+        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), NFA_ORIENT_THR(_nfa_orient_thr), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
     CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
               _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
@@ -195,14 +195,14 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             rect rec;
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
-            double log_nfa = 0;
+            double perc_nfa = 0;
             if(doRefine)
             {
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
 
                 // Compute NFA
-                log_nfa = rect_improve(rec);
-                //if(log_nfa <= LOG_EPS) { continue; }
+                perc_nfa = rect_improve(rec);
+                if(perc_nfa <= NFA_ORIENT_THR) { continue; }
             }
             // Found new line
             ++ls_count;
@@ -231,7 +231,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
             if (widths) widths->push_back(rec.width);
             if (precisions) precisions->push_back(rec.p);
-            if (nfas) nfas->push_back(log_nfa);
+            if (nfas) nfas->push_back(perc_nfa);
 
             // //Add the linesID to the region on the image
             // for(unsigned int el = 0; el < reg_size; el++)
@@ -578,11 +578,11 @@ double LSD::rect_improve(rect& rec) const
     double delta = 0.5;
     double delta_2 = delta / 2.0;
 
-    double log_nfa = rect_nfa(rec);
+    double perc_nfa = rect_nfa(rec);
 
-    if(log_nfa > LOG_EPS) return log_nfa; //Good rectangle
+    if(perc_nfa > NFA_ORIENT_THR) return perc_nfa; //Good rectangle
 
-    // std::cout << "Log eps :" << LOG_EPS << "\n" <<log_nfa << std::endl;
+    // std::cout << "Log eps :" << NFA_ORIENT_THR << "\n" <<perc_nfa << std::endl;
     // Try to improve
     // Finer precision
     rect r = rect(rec); // copy
@@ -590,15 +590,15 @@ double LSD::rect_improve(rect& rec) const
     {
         r.p /= 2;
         r.prec = r.p * M_PI;
-        double log_nfa_new = rect_nfa(r);
-        if(log_nfa_new > log_nfa)
+        double perc_nfa_new = rect_nfa(r);
+        if(perc_nfa_new > perc_nfa)
         {
-            log_nfa = log_nfa_new;
+            perc_nfa = perc_nfa_new;
             rec = rect(r);
         }
     }
-    // std::cout << "after: "<< log_nfa << std::endl;
-    if(log_nfa > LOG_EPS) return log_nfa;
+    // std::cout << "after: "<< perc_nfa << std::endl;
+    if(perc_nfa > NFA_ORIENT_THR) return perc_nfa;
 
     // Try to reduce width
     r = rect(rec);
@@ -607,17 +607,17 @@ double LSD::rect_improve(rect& rec) const
         if((r.width - delta) >= 0.5)
         {
             r.width -= delta;
-            double log_nfa_new = rect_nfa(r);
-            if(log_nfa_new > log_nfa)
+            double perc_nfa_new = rect_nfa(r);
+            if(perc_nfa_new > perc_nfa)
             {
                 rec = rect(r);
-                log_nfa = log_nfa_new;
+                perc_nfa = perc_nfa_new;
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
+    // std::cout << "after: " << perc_nfa << std::endl;
 
-    if(log_nfa > LOG_EPS) return log_nfa;
+    if(perc_nfa > NFA_ORIENT_THR) return perc_nfa;
 
     
     // Try to reduce one side of rectangle
@@ -631,17 +631,17 @@ double LSD::rect_improve(rect& rec) const
             r.x2 += -r.dy * delta_2;
             r.y2 +=  r.dx * delta_2;
             r.width -= delta;
-            double log_nfa_new = rect_nfa(r);
-            if(log_nfa_new > log_nfa)
+            double perc_nfa_new = rect_nfa(r);
+            if(perc_nfa_new > perc_nfa)
             {
                 rec = rect(r);
-                log_nfa = log_nfa_new;
+                perc_nfa = perc_nfa_new;
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
+    // std::cout << "after: " << perc_nfa << std::endl;
 
-    if(log_nfa > LOG_EPS) return log_nfa;
+    if(perc_nfa > NFA_ORIENT_THR) return perc_nfa;
 
     
     // Try to reduce other side of rectangle
@@ -655,17 +655,17 @@ double LSD::rect_improve(rect& rec) const
             r.x2 -= -r.dy * delta_2;
             r.y2 -=  r.dx * delta_2;
             r.width -= delta;
-            double log_nfa_new = rect_nfa(r);
-            if(log_nfa_new > log_nfa)
+            double perc_nfa_new = rect_nfa(r);
+            if(perc_nfa_new > perc_nfa)
             {
                 rec = rect(r);
-                log_nfa = log_nfa_new;
+                perc_nfa = perc_nfa_new;
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
+    // std::cout << "after: " << perc_nfa << std::endl;
 
-    if(log_nfa > LOG_EPS) return log_nfa;
+    if(perc_nfa > NFA_ORIENT_THR) return perc_nfa;
 
     
     // Try finer precision
@@ -676,18 +676,18 @@ double LSD::rect_improve(rect& rec) const
         {
             r.p /= 2;
             r.prec = r.p * M_PI;
-            double log_nfa_new = rect_nfa(r);
-            if(log_nfa_new > log_nfa)
+            double perc_nfa_new = rect_nfa(r);
+            if(perc_nfa_new > perc_nfa)
             {
                 rec = rect(r);
-                log_nfa = log_nfa_new;
+                perc_nfa = perc_nfa_new;
             }
         }
     }
-    // std::cout << log_nfa << std::endl;
+    // std::cout << perc_nfa << std::endl;
     
     // std::cout << "----------------" << std::endl;
-    return log_nfa;
+    return perc_nfa;
 }
 
 double LSD::rect_nfa(const rect& rec) const
@@ -809,7 +809,8 @@ double LSD::rect_nfa(const rect& rec) const
         right_x += rstep;
     }
     // std::cout << "All: " << total_pts << " aligned " << alg_pts << std::endl;
-    return nfa(total_pts, alg_pts, rec.p);
+    // return nfa(total_pts, alg_pts, rec.p);
+    return double(alg_pts)/total_pts;
 }
 
 double LSD::nfa(const int& n, const int& k, const double& p) const
@@ -972,5 +973,6 @@ int LSD::showSegments(const std::string& name, cv::Size size, const std::vector<
     else img = image->clone();
     int n = compareSegments(size, lines1, lines2, &img);
     imshow(name.c_str(), img);
+    imwrite("line_diff.png", img);
     return n;
 }

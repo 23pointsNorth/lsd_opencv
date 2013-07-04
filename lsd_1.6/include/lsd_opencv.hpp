@@ -26,7 +26,7 @@ public:
  */
     LSD(bool _refine = true, int _subdivision = 1, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
-        double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
+        double _nfa_orient_thr = 0.01, double _density_th = 0.7, int _n_bins = 1024);
 /**
  * Detect lines in the input image with the specified ROI.
  *
@@ -111,7 +111,7 @@ private:
     const double SIGMA_SCALE;
     const double QUANT;
     const double ANG_TH;
-    const double LOG_EPS;
+    const double NFA_ORIENT_THR;
     const double DENSITY_TH;
     const int N_BINS;
 

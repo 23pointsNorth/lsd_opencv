@@ -25,6 +25,8 @@
 
 const double DEG_TO_RADS = M_PI / 180;
 
+//const double NFA_ORIENT_THR = 0.01;
+
 #define log_gamma(x) ((x)>15.0?log_gamma_windschitl(x):log_gamma_lanczos(x))
 
 struct edge
