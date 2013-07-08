@@ -11,7 +11,7 @@ using namespace std;
 using namespace cv;
 using namespace lsdwrap;
 
-const int REPEAT_CYCLE = 5;
+const int REPEAT_CYCLE = 10;
 
 int main(int argc, char** argv)
 {
@@ -26,46 +26,60 @@ int main(int argc, char** argv)
 
 	Mat image = imread(in, CV_LOAD_IMAGE_GRAYSCALE);
 	std::cout << "Input image size: " << image.size() << std::endl;
+	std::cout << "Time averaged over " << REPEAT_CYCLE << " iterations." << std::endl;
 
 	//
 	// LSD 1.6 test
 	//
 	LsdWrap lsd_old;
-	auto start = std::chrono::high_resolution_clock::now();
+	double start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
 		vector<seg> seg_old;
 		lsd_old.lsdw(image, seg_old);
 	}
 	//lsd_old.lsd_subdivided(image, seg_old, 3);
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "lsd 1.6 - 1 cycle for avg. " << double(duration)/REPEAT_CYCLE << " ms." << std::endl;
+	double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "lsd 1.6    - " << double(duration_ms)/REPEAT_CYCLE << " ms." << std::endl;
 
 	//
-	// OpenCV LSD full test
+	// OpenCV LSD ADV settings test
 	//
-	LSD lsd_cv; // Refine founded lines
-	start = std::chrono::high_resolution_clock::now();
+	LSD lsd_adv(REFINE_ADV); // Refine founded lines
+	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
 		vector<Vec4i> lines;
-		lsd_cv.detect(image, lines);
+		lsd_adv.detect(image, lines);
 	}
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "OpenCV full - 1 cycle for avg. " << double(duration)/REPEAT_CYCLE << " ms." << std::endl;
+	duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "OpenCV ADV - " << double(duration_ms)/REPEAT_CYCLE << " ms." << std::endl;
 	
 	//
-	// OpenCV LSD not refined test
+	// OpenCV LSD STD settings test
 	//
-	LSD lsd_notref(NO_REFINE); // Do not refine lines
-	start = std::chrono::high_resolution_clock::now();
+	LSD lsd_std(REFINE_STD); // Do not refine lines
+	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
 		vector<Vec4i> lines;
-		lsd_notref.detect(image, lines);
+		lsd_std.detect(image, lines);
 	}
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "OpenCV not refined - 1 cycle for avg. " << double(duration)/REPEAT_CYCLE << " ms." << std::endl;
+	duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "OpenCV STD - " << double(duration_ms)/REPEAT_CYCLE << " ms." << std::endl;
+	
+	//
+	// OpenCV LSD NO refinement settings test
+	//
+	LSD lsd_no(NO_REFINE); // Do not refine lines
+	start = double(getTickCount());
+	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
+	{
+		vector<Vec4i> lines;
+		lsd_no.detect(image, lines);
+	}
+	duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "OpenCV NO  - " << double(duration_ms)/REPEAT_CYCLE << " ms." << std::endl;
 	
 	return 0;
 }
