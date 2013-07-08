@@ -53,9 +53,10 @@ typedef enum {
     REFINE_ADV = 2
 } refine_lvl;
 
-class LSD
+class CV_EXPORTS LSD
 {
 public:
+
 /**
  * Create an LSD object. Specifying scale, number of subdivisions for the image, should the lines be refined and other constants as follows:
  *
@@ -71,7 +72,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    LSD(refine_lvl _refine = REFINE_ADV, int _subdivision = 1, double _scale = 0.8, 
+    CV_WRAP LSD(refine_lvl _refine = REFINE_ADV, int _subdivision = 1, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
@@ -92,7 +93,7 @@ public:
  *                              * 0 corresponds to 1 mean false alarm
  *                              * 1 corresponds to 0.1 mean false alarms
  */
-    void detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi = cv::Rect(),
+    CV_WRAP void detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi = cv::Rect(),
                 cv::OutputArray width = cv::noArray(), cv::OutputArray prec = cv::noArray(),
                 cv::OutputArray nfa = cv::noArray());
 

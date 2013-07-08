@@ -55,18 +55,18 @@
 
 using namespace cv;
 
-inline double distSq(const double x1, const double y1, const double x2, const double y2)
+CV_INLINE double distSq(const double x1, const double y1, const double x2, const double y2)
 {
     return (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
 }
 
-inline double dist(const double x1, const double y1, const double x2, const double y2)
+CV_INLINE double dist(const double x1, const double y1, const double x2, const double y2)
 {
     return sqrt(distSq(x1, y1, x2, y2));
 }
 
 // Signed angle difference
-inline double angle_diff_signed(const double& a, const double& b)
+CV_INLINE double angle_diff_signed(const double& a, const double& b)
 {
     double diff = a - b;
     while(diff <= -M_PI) diff += M_2__PI;
@@ -75,13 +75,13 @@ inline double angle_diff_signed(const double& a, const double& b)
 }
 
 // Absolute value angle difference
-inline double angle_diff(const double& a, const double& b)
+CV_INLINE double angle_diff(const double& a, const double& b)
 {
     return std::fabs(angle_diff_signed(a, b));
 }
 
 // Compare doubles by relative error.
-inline bool double_equal(const double& a, const double& b)
+CV_INLINE bool double_equal(const double& a, const double& b)
 {
     // trivial case
     if(a == b) return true;
@@ -107,7 +107,7 @@ bool AsmallerB_XoverY(const edge& a, const edge& b)
  *   the gamma function of x using Windschitl method.
  *   See http://www.rskey.org/gamma.htm
  */
-inline double log_gamma_windschitl(const double& x)
+CV_INLINE double log_gamma_windschitl(const double& x)
 {
     return 0.918938533204673 + (x-0.5)*log(x) - x
          + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)));
@@ -118,7 +118,7 @@ inline double log_gamma_windschitl(const double& x)
  *   the gamma function of x using the Lanczos approximation.
  *   See http://www.rskey.org/gamma.htm
  */
-inline double log_gamma_lanczos(const double& x)
+CV_INLINE double log_gamma_lanczos(const double& x)
 {
     static double q[7] = { 75122.6331530, 80916.6278952, 36308.2951477,
                          8687.24529705, 1168.92649479, 83.8676043424,
@@ -881,7 +881,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
     return -log10(bin_tail) - LOG_NT;
 }
 
-inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
+CV_INLINE bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
     const double& a = angles_data[address];
     if (a == NOTDEF) { return false; }
