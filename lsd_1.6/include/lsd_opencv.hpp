@@ -47,11 +47,11 @@
 
 namespace cv {
 
-typedef enum {
+enum refine_lvl{
     NO_REFINE = 0, 
     REFINE_STD = 1, 
     REFINE_ADV = 2
-} refine_lvl;
+};
 
 class CV_EXPORTS LSD
 {
@@ -60,8 +60,11 @@ public:
 /**
  * Create an LSD object. Specifying scale, number of subdivisions for the image, should the lines be refined and other constants as follows:
  *
- * @param _refine       Should the lines found be refined? E.g. breaking arches into smaller line approximations. 
- *                      If disabled, execution is faster.
+ * @param _refine       How should the lines found be refined? 
+ *                      NO_REFINE   - No refinement applied.
+ *                      REFINE_STD  - Standard refinement is applied. E.g. breaking arches into smaller line approximations. 
+ *                      REFINE_ADV  - Advanced refinement. Number of false alarms is calculated, 
+ *                                    lines are refined through increase of precision, decrement in size, etc.
  * @param _subdivision  The factor by which each dimension of the image will be divided into. 2 -> generates 2x2 rois and finds lines in them.
  *                      Note: Using smalled images (higher subdivision factor) will find fines lines.
  * @param _scale        The scale of the image that will be used to find the lines. Range (0..1].
@@ -174,13 +177,13 @@ private:
     };
 
 
-    typedef struct coorlist_s
+    struct coorlist
     {
         cv::Point2i p;
-        struct coorlist_s* next;
-    } coorlist;
+        struct coorlist* next;
+    };
 
-    typedef struct rect_s
+    struct rect
     {
         double x1, y1, x2, y2;    // first and second point of the line segment
         double width;             // rectangle width
@@ -189,7 +192,7 @@ private:
         double dx,dy;             // (dx,dy) is vector oriented as the line segment
         double prec;              // tolerance angle
         double p;                 // probability of a point with angle within 'prec'
-    } rect;
+    };
 
 /**
  * Detect lines in the whole input image.

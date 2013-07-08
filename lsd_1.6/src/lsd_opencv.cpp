@@ -96,7 +96,7 @@ CV_INLINE bool double_equal(const double& a, const double& b)
     return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
 
-bool AsmallerB_XoverY(const edge& a, const edge& b)
+CV_INLINE bool AsmallerB_XoverY(const edge& a, const edge& b)
 {
     if (a.p.x == b.p.x) return a.p.y < b.p.y;
     else return a.p.x < b.p.x;
@@ -237,7 +237,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             rect rec;
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
-            double log_nfa = 0;
+            double log_nfa = -1;
             if(doRefine > NO_REFINE)
             {
                 // At least REFINE_STANDARD lvl.
@@ -277,7 +277,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
             if (widths) widths->push_back(rec.width);
             if (precisions) precisions->push_back(rec.p);
-            if (nfas) nfas->push_back(log_nfa);
+            if (nfas && doRefine >= REFINE_ADV) nfas->push_back(log_nfa);
 
             // //Add the linesID to the region on the image
             // for(unsigned int el = 0; el < reg_size; el++)
