@@ -92,9 +92,9 @@ public:
  *                              * 0 corresponds to 1 mean false alarm
  *                              * 1 corresponds to 0.1 mean false alarms
  */
-    void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi = cv::Rect(),
-                cv::OutputArray& width = cv::noArray(), cv::OutputArray& prec = cv::noArray(),
-                cv::OutputArray& nfa = cv::noArray());
+    void detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi = cv::Rect(),
+                cv::OutputArray width = cv::noArray(), cv::OutputArray prec = cv::noArray(),
+                cv::OutputArray nfa = cv::noArray());
 
 /**
  * Draw lines on the given canvas.

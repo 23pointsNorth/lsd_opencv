@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono>
 
 #include "lsd_wrap.hpp"
 #include "lsd_opencv.hpp"
@@ -38,14 +37,13 @@ int main(int argc, char** argv)
 		vector<seg> seg_old;
 		lsd_old.lsdw(image, seg_old);
 	}
-	//lsd_old.lsd_subdivided(image, seg_old, 3);
 	double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 	std::cout << "lsd 1.6    - " << double(duration_ms)/REPEAT_CYCLE << " ms." << std::endl;
 
 	//
 	// OpenCV LSD ADV settings test
 	//
-	LSD lsd_adv(REFINE_ADV); // Refine founded lines
+	LSD lsd_adv(REFINE_ADV);
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
@@ -58,7 +56,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD STD settings test
 	//
-	LSD lsd_std(REFINE_STD); // Do not refine lines
+	LSD lsd_std(REFINE_STD);
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{

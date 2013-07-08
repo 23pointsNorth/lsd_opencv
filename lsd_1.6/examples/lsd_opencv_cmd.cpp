@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono>
 #include <opencv2/opencv.hpp>
+
 #include "lsd_opencv.hpp"
 
 using namespace std;
@@ -28,15 +28,15 @@ int main(int argc, char** argv)
     std::vector<double> width, prec, nfa;  
 	LSD lsd;
 
-    auto start = std::chrono::high_resolution_clock::now();
+    double start = double(getTickCount());
     lsd.detect(image, lines, Rect(), width, prec, nfa); 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
     
-    std::cout << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
+    std::cout << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
 	
 	//Save to file
 	ofstream segfile;
-  	segfile.open(out);
+  	segfile.open(out.c_str());
     for (unsigned int i = 0; i < lines.size(); ++i)
     {
 		cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1] 

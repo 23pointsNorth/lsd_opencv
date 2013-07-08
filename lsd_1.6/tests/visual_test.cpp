@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono>
 
 #include "lsd_wrap.hpp"
 #include "lsd_opencv.hpp"
@@ -30,11 +29,11 @@ int main(int argc, char** argv)
 	//
 	LsdWrap lsd_old;
 	vector<seg> seg_old;
-	auto start = std::chrono::high_resolution_clock::now();
+	double start = double(getTickCount());
 	lsd_old.lsdw(image, seg_old);
 	//lsd_old.lsd_subdivided(image, seg_old, 3);
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "lsd 1.6 - blue\n\t" << seg_old.size() <<" line segments found. For " << duration << " ms." << std::endl;
+	double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "lsd 1.6 - blue\n\t" << seg_old.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
 
 	//
 	// OpenCV LSD
@@ -44,10 +43,10 @@ int main(int argc, char** argv)
 	vector<Vec4i> lines;
 	
     std::vector<double> width, prec, nfa;
-	start = std::chrono::high_resolution_clock::now();
+	start = double(getTickCount());
 	lsd_cv.detect(image, lines);
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << "OpenCV lsd - red\n\t" << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
+	duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+	std::cout << "OpenCV lsd - red\n\t" << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
 		
 	//Copy the old structure to the new
 	vector<Vec4i> seg_cvo(seg_old.size());
@@ -64,7 +63,7 @@ int main(int argc, char** argv)
 	//
 	LSD::showSegments("Drawing segments", image, lines);
 	int d = LSD::showSegments("Segments difference", image.size(), seg_cvo, lines, &image);
-	std::cout << "There are " << d << " not overlapping pixels" << std::endl;
+	std::cout << "There are " << d << " not overlapping pixels." << std::endl;
 	waitKey(0); // wait for human action 
 	
 	return 0;

@@ -145,9 +145,9 @@ LSD::LSD(refine_lvl _refine, int _subdivision, double _scale, double _sigma_scal
     if(_subdivision != 1) { std::cout << "Warning! Subdivision != 1 not implemented. Using 1." << std::endl; }
 }
 
-void LSD::detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi,
-                cv::OutputArray& width, cv::OutputArray& prec,
-                cv::OutputArray& nfa)
+void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi,
+                cv::OutputArray width, cv::OutputArray prec,
+                cv::OutputArray nfa)
 {
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);

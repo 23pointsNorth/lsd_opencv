@@ -2,7 +2,6 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <iostream>
-#include <chrono>
 
 using namespace cv;
 using namespace std;
@@ -48,10 +47,10 @@ int main(int argc, char** argv)
     }
 #else
     vector<Vec4i> lines;
-    auto start = std::chrono::high_resolution_clock::now();
+    double start = double(getTickCount());
     HoughLinesP(dst, lines, 1, CV_PI/180, 50, 50, 10 );
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-    std::cout << "Hough Lines: " << lines.size() <<" segments found. For " << duration << " ms." << std::endl;
+    double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+    std::cout << "Hough Lines: " << lines.size() <<" segments found. For " << duration_ms << " ms." << std::endl;
 
     for( size_t i = 0; i < lines.size(); i++ )
     {
@@ -59,6 +58,7 @@ int main(int argc, char** argv)
         line( cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 1, CV_AA);
     }
 #endif
+    
     imshow("source", src);
     imshow("detected lines", cdst);
 

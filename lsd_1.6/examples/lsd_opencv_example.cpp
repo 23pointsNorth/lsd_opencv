@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv2/opencv.hpp>
-#include <chrono>
 
 #include "lsd_opencv.hpp"
 
@@ -27,13 +26,12 @@ int main(void)
     std::vector<Vec4i> lines;
     std::vector<double> width, prec, nfa;
     LSD ls;
-    auto start = std::chrono::high_resolution_clock::now();
     
-
+    double start = double(getTickCount());
     ls.detect(img3, lines, Rect(), width, prec, nfa); 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
     
-    std::cout << lines.size() <<" line segments found. For " << duration << " ms." << std::endl;
+    std::cout << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
     for (unsigned int i = 0; i < lines.size(); ++i)
     {
         cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1] 

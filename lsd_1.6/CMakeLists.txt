@@ -11,11 +11,10 @@ SET(CMAKE_BUILD_TYPE DEBUG)
 SET(LIBRARY_TYPE STATIC)
 
 # Set link and compile flags
-# c++11 for chrono 
 # -no-write-strings to remove deprecated conversion for the c-code.
 # -pg for profiling the code. REMOVE WHEN DELIVERING  
 # -O3 -ffast-math optimization flag
-SET(CXX_COVERAGE_FLAGS	"-std=c++11 -Wno-write-strings -O3 -ffast-math -pg")
+SET(CXX_COVERAGE_FLAGS	"-Wno-write-strings -O3 -ffast-math -pg")
 SET(CXX_COVERAGE_LINK_FLAGS "")
 SET(CMAKE_CXX_FLAGS	"${CMAKE_CXX_FLAGS} ${CXX_COVERAGE_FLAGS}")
 SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COVERAGE_LINK_FLAGS}")

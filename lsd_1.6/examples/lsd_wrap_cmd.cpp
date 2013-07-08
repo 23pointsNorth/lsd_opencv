@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono>
+
 #include "lsd_wrap.hpp"
 
 using namespace std;
@@ -25,18 +25,18 @@ int main(int argc, char** argv)
 	
 	LsdWrap lsd;
 	vector<seg> segments;
-	auto start = std::chrono::high_resolution_clock::now();
-	
+	double start = double(getTickCount());
+    
 	lsd.lsdw(image, segments);
 	
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-	std::cout << segments.size() <<" line segments found. For " << duration << " ms." << std::endl;
+	double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+    std::cout << segments.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
 	
 	lsd.imshow_segs(string("Image"), image, segments);
 	
 	//Save to file
 	ofstream segfile;
-  	segfile.open(out);
+  	segfile.open(out.c_str());
 	vector<seg>::iterator it = segments.begin(), eit = segments.end();
 	for (; it!=eit; it++)
 	{
