@@ -134,7 +134,7 @@ inline double log_gamma_lanczos(const double& x)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, 
+LSD::LSD(refine_lvl _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, 
          double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), 
         QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
@@ -238,13 +238,17 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
             double log_nfa = 0;
-            if(doRefine)
+            if(doRefine > NO_REFINE)
             {
+                // At least REFINE_STANDARD lvl.
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
 
-                // Compute NFA
-                log_nfa = rect_improve(rec);
-                //if(log_nfa <= LOG_EPS) { continue; }
+                if(doRefine >= REFINE_ADV)
+                {
+                    // Compute NFA
+                    log_nfa = rect_improve(rec);
+                    if(log_nfa <= LOG_EPS) { continue; }
+                }
             }
             // Found new line
             ++ls_count;
@@ -254,7 +258,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             rec.x2 += 0.5; rec.y2 += 0.5;
 
             // scale the result values if a sub-sampling was performed
-            if(SCALE != 1.0)
+            if(SCALE != 1)
             {
                 rec.x1 /= SCALE; rec.y1 /= SCALE;
                 rec.x2 /= SCALE; rec.y2 /= SCALE;

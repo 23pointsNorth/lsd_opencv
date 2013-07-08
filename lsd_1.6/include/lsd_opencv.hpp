@@ -47,6 +47,12 @@
 
 namespace cv {
 
+typedef enum {
+    NO_REFINE = 0, 
+    REFINE_STD = 1, 
+    REFINE_ADV = 2
+} refine_lvl;
+
 class LSD
 {
 public:
@@ -65,7 +71,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    LSD(bool _refine = true, int _subdivision = 1, double _scale = 0.8, 
+    LSD(refine_lvl _refine = REFINE_ADV, int _subdivision = 1, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
@@ -149,7 +155,7 @@ private:
     int roix, roiy;
 
     const double SCALE;
-    const bool doRefine;
+    const refine_lvl doRefine;
     const int SUBDIVISION;
     const double SIGMA_SCALE;
     const double QUANT;

@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD not refined test
 	//
-	LSD lsd_notref(false); // Do not refine lines
+	LSD lsd_notref(NO_REFINE); // Do not refine lines
 	start = std::chrono::high_resolution_clock::now();
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
