@@ -132,10 +132,12 @@ inline double log_gamma_lanczos(const double& x)
     }
     return a + log(b);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, double _ang_th, double _log_eps, double _density_th, int _n_bins)
-        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
+LSD::LSD(bool _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, 
+         double _ang_th, double _log_eps, double _density_th, int _n_bins)
+        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), 
+        QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
     CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
               _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
@@ -185,18 +187,17 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
     std::vector<double>* nfas)
 {
     // Angle tolerance
-    const double prec = M_PI * ANG_TH / 180.0;
-    const double p = ANG_TH / 180.0;
+    const double prec = M_PI * ANG_TH / 180;
+    const double p = ANG_TH / 180;
     const double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
     vector<coorlist> list;
     if (SCALE != 1)
     {
-        //TODO: Asses Gaussian blur, as scaling down applies.
         Mat gaussian_img;
-        const double sigma = (SCALE < 1.0)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
-        const double sprec = 3.0;
-        const unsigned int h =  (unsigned int)(ceil(sigma * sqrt(2.0 * sprec * log(10.0))));
+        const double sigma = (SCALE < 1)?(SIGMA_SCALE / SCALE):(SIGMA_SCALE);
+        const double sprec = 3;
+        const unsigned int h =  (unsigned int)(ceil(sigma * sqrt(2 * sprec * log(10))));
         Size ksize(1 + 2 * h, 1 + 2 * h); // kernel size 
         GaussianBlur(image, gaussian_img, ksize, sigma);
         // Scale image to needed size
@@ -209,7 +210,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
         ll_angle(rho, N_BINS, list);
     }
 
-    LOG_NT = 5.0 * (log10(double(img_width)) + log10(double(img_height))) / 2.0 + log10(11.0);
+    LOG_NT = 5 * (log10(double(img_width)) + log10(double(img_height))) / 2 + log10(11);
     const int min_reg_size = int(-LOG_NT/log10(p)); // minimal number of points in region that can give a meaningful event 
     
     // // Initialize region only when needed
@@ -307,6 +308,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     CV_Assert(scaled_image.isContinuous() && 
               modgrad.isContinuous() && 
               angles.isContinuous());   // Accessing image data linearly
+
     double max_grad = -1;
     for(int y = 0; y < img_height - 1; ++y)
     {
@@ -316,7 +318,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             double BC = scaled_image_data[addr + 1] - scaled_image_data[addr + img_width];
             double gx = DA + BC;    // gradient x component 
             double gy = DA - BC;    // gradient y component 
-            double norm = std::sqrt((gx * gx + gy * gy)/4.0);   // gradient norm 
+            double norm = std::sqrt((gx * gx + gy * gy) / 4); // gradient norm 
             
             modgrad_data[addr] = norm;    // store gradient
 
@@ -326,7 +328,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             }
             else
             {
-                angles_data[addr] = cv::fastAtan2(gx, -gy) * DEG_TO_RADS;   // gradient angle computation
+                angles_data[addr] = cv::fastAtan2(gx, -gy) * DEG_TO_RADS;  // gradient angle computation
                 if (norm > max_grad) { max_grad = norm; }
             }
 
@@ -338,14 +340,14 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     vector<coorlist*> range_s(n_bins);
     vector<coorlist*> range_e(n_bins);
     unsigned int count = 0;
-    double bin_coef = (max_grad > 0)?double(n_bins - 1) / max_grad:0; //if all image is smooth, max_grad <= 0
+    double bin_coef = (max_grad > 0) ? double(n_bins - 1) / max_grad : 0; // If all image is smooth, max_grad <= 0
 
     for(int y = 0; y < img_height - 1; ++y)
     {
         const double* norm = modgrad_data + y * img_width;
         for(int x = 0; x < img_width - 1; ++x, ++norm)
         {
-            // store the point in the right bin according to its norm 
+            // Store the point in the right bin according to its norm 
             int i = int((*norm) * bin_coef);
             if(!range_e[i])
             {
@@ -447,6 +449,7 @@ void LSD::region2rect(const std::vector<RegionPoint>& reg, const int reg_size, c
         y += double(pnt.y) * weight;
         sum += weight;
     }
+
     // Weighted sum must differ from 0
     CV_Assert(sum > 0);
     
@@ -499,7 +502,7 @@ double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, 
     double Iyy = 0.0;
     double Ixy = 0.0;
 
-    // compute inertia matrix 
+    // Compute inertia matrix 
     for(int i = 0; i < reg_size; ++i)
     {
         const double& regx = reg[i].x; 
@@ -519,7 +522,8 @@ double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, 
     double lambda = 0.5 * (Ixx + Iyy - sqrt((Ixx - Iyy) * (Ixx - Iyy) + 4.0 * Ixy * Ixy));
 
     // Compute angle
-    double theta = (fabs(Ixx)>fabs(Iyy))?cv::fastAtan2(lambda - Ixx, Ixy):cv::fastAtan2(Ixy, lambda - Iyy); // in degs
+    double theta = (fabs(Ixx)>fabs(Iyy))?
+                    cv::fastAtan2(lambda - Ixx, Ixy):cv::fastAtan2(Ixy, lambda - Iyy); // in degs
     theta *= DEG_TO_RADS;
 
     // Correct angle by 180 deg if necessary 
@@ -588,8 +592,8 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
 
     while(density < density_th)
     {
-        radSq *= 0.75*0.75; // reduce region's radius to 75% of its value
-        // remove points from the region and update 'used' map 
+        radSq *= 0.75*0.75; // Reduce region's radius to 75% of its value
+        // Remove points from the region and update 'used' map 
         for(int i = 0; i < reg_size; ++i)
         {
             if(distSq(xc, yc, double(reg[i].x), double(reg[i].y)) > radSq)
@@ -598,7 +602,7 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
                 *(reg[i].used) = NOTUSED;
                 std::swap(reg[i], reg[reg_size - 1]);
                 --reg_size;
-                --i; // to avoid skipping one point 
+                --i; // To avoid skipping one point 
             }
         }
 
@@ -612,7 +616,7 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
     }
 
     return true;
-    }
+}
 
 double LSD::rect_improve(rect& rec) const
 {
@@ -621,12 +625,11 @@ double LSD::rect_improve(rect& rec) const
 
     double log_nfa = rect_nfa(rec);
 
-    if(log_nfa > LOG_EPS) return log_nfa; //Good rectangle
+    if(log_nfa > LOG_EPS) return log_nfa; // Good rectangle
 
-    // std::cout << "Log eps :" << LOG_EPS << "\n" <<log_nfa << std::endl;
     // Try to improve
     // Finer precision
-    rect r = rect(rec); // copy
+    rect r = rect(rec); // Copy
     for(int n = 0; n < 5; ++n)
     {
         r.p /= 2;
@@ -638,7 +641,6 @@ double LSD::rect_improve(rect& rec) const
             rec = rect(r);
         }
     }
-    // std::cout << "after: "<< log_nfa << std::endl;
     if(log_nfa > LOG_EPS) return log_nfa;
 
     // Try to reduce width
@@ -656,10 +658,7 @@ double LSD::rect_improve(rect& rec) const
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
-
     if(log_nfa > LOG_EPS) return log_nfa;
-
     
     // Try to reduce one side of rectangle
     r = rect(rec);
@@ -680,11 +679,8 @@ double LSD::rect_improve(rect& rec) const
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
-
     if(log_nfa > LOG_EPS) return log_nfa;
 
-    
     // Try to reduce other side of rectangle
     r = rect(rec);
     for(unsigned int n = 0; n < 5; ++n)
@@ -704,11 +700,8 @@ double LSD::rect_improve(rect& rec) const
             }
         }
     }
-    // std::cout << "after: " << log_nfa << std::endl;
-
     if(log_nfa > LOG_EPS) return log_nfa;
 
-    
     // Try finer precision
     r = rect(rec);
     for(unsigned int n = 0; n < 5; ++n)
@@ -725,9 +718,7 @@ double LSD::rect_improve(rect& rec) const
             }
         }
     }
-    // std::cout << log_nfa << std::endl;
-    
-    // std::cout << "----------------" << std::endl;
+
     return log_nfa;
 }
 
@@ -740,7 +731,7 @@ double LSD::rect_nfa(const rect& rec) const
 
     std::vector<edge> ordered_x(4);
     edge* min_y = &ordered_x[0];
-    edge* max_y = &ordered_x[0]; //will be used for loop range
+    edge* max_y = &ordered_x[0]; // Will be used for loop range
 
     ordered_x[0].p.x = rec.x1 - dyhw; ordered_x[0].p.y = rec.y1 + dxhw; ordered_x[0].taken = false;
     ordered_x[1].p.x = rec.x2 - dyhw; ordered_x[1].p.y = rec.y2 + dxhw; ordered_x[1].taken = false;
@@ -748,13 +739,8 @@ double LSD::rect_nfa(const rect& rec) const
     ordered_x[3].p.x = rec.x1 + dyhw; ordered_x[3].p.y = rec.y1 - dxhw; ordered_x[3].taken = false;
     
     std::sort(ordered_x.begin(), ordered_x.end(), AsmallerB_XoverY);
-    // std::cout << " " << ordered_x[0].p;
-    // std::cout << " " << ordered_x[1].p;
-    // std::cout << " " << ordered_x[2].p;
-    // std::cout << " " << ordered_x[3].p << std::endl;
-    // std::cout << " Sorted!" << std::endl;
-
-    //find min y. And mark as taken. find max y.
+    
+    // Find min y. And mark as taken. find max y.
     for(unsigned int i = 1; i < 4; ++i)
     {
         if(min_y->p.y > ordered_x[i].p.y) {min_y = &ordered_x[i]; }
@@ -762,7 +748,7 @@ double LSD::rect_nfa(const rect& rec) const
     }
     min_y->taken = true;
 
-    //find leftmost untaken point;
+    // Find leftmost untaken point;
     edge* leftmost = 0;
     for(unsigned int i = 0; i < 4; ++i)
     {
@@ -780,7 +766,7 @@ double LSD::rect_nfa(const rect& rec) const
     }
     leftmost->taken = true;
 
-    //find rightmost untaken point;
+    // Find rightmost untaken point;
     edge* rightmost = 0;
     for(unsigned int i = 0; i < 4; ++i)
     {
@@ -798,7 +784,7 @@ double LSD::rect_nfa(const rect& rec) const
     }
     rightmost->taken = true;
 
-    //find last untaken point;
+    // Find last untaken point;
     edge* tailp = 0;
     for(unsigned int i = 0; i < 4; ++i)
     {
@@ -816,32 +802,32 @@ double LSD::rect_nfa(const rect& rec) const
     }
     tailp->taken = true;
 
-    // std::cout << "min_y " << min_y->p << " leftmost " << leftmost->p << " rightmost " << rightmost->p << " tailp " << tailp->p << std::endl; 
-
-    double flstep = (min_y->p.y != leftmost->p.y) ? (min_y->p.x - leftmost->p.x) / (min_y->p.y - leftmost->p.y) : 0; //first left step
-    double slstep = (leftmost->p.y != tailp->p.x) ? (leftmost->p.x - tailp->p.x) / (leftmost->p.y - tailp->p.x) : 0; //second left step
+    double flstep = (min_y->p.y != leftmost->p.y) ? 
+                    (min_y->p.x - leftmost->p.x) / (min_y->p.y - leftmost->p.y) : 0; //first left step
+    double slstep = (leftmost->p.y != tailp->p.x) ? 
+                    (leftmost->p.x - tailp->p.x) / (leftmost->p.y - tailp->p.x) : 0; //second left step
     
-    double frstep = (min_y->p.y != rightmost->p.y) ? (min_y->p.x - rightmost->p.x) / (min_y->p.y - rightmost->p.y) : 0; //first right step
-    double srstep = (rightmost->p.y != tailp->p.x) ? (rightmost->p.x - tailp->p.x) / (rightmost->p.y - tailp->p.x) : 0; //second right step
+    double frstep = (min_y->p.y != rightmost->p.y) ? 
+                    (min_y->p.x - rightmost->p.x) / (min_y->p.y - rightmost->p.y) : 0; //first right step
+    double srstep = (rightmost->p.y != tailp->p.x) ? 
+                    (rightmost->p.x - tailp->p.x) / (rightmost->p.y - tailp->p.x) : 0; //second right step
     
     double lstep = flstep, rstep = frstep;
 
     int left_x = min_y->p.x, right_x = min_y->p.x; 
-        
+    
+    // Loop around all points in the region and count those that are aligned.
     for(int y = min_y->p.y; y <= max_y->p.y; ++y)
     {
-        // std::cout << "y: " << y << " - ";
         int adx = y * img_width + left_x;
         for(int x = left_x; x <= right_x; ++x, ++adx)
         {
-            // std::cout << x << "; ";
             ++total_pts;
             if(isAligned(adx, rec.theta, rec.prec))
             {
                 ++alg_pts;
             }
         }
-        // std::cout << std::endl;
 
         if(y >= leftmost->p.y) { lstep = slstep; }
         if(y >= rightmost->p.y) { rstep = srstep; }
@@ -849,13 +835,13 @@ double LSD::rect_nfa(const rect& rec) const
         left_x += lstep;
         right_x += rstep;
     }
-    // std::cout << "All: " << total_pts << " aligned " << alg_pts << std::endl;
+
     return nfa(total_pts, alg_pts, rec.p);
 }
 
 double LSD::nfa(const int& n, const int& k, const double& p) const
 {
-    //Trivial cases
+    // Trivial cases
     if(n == 0 || k == 0) { return -LOG_NT; }  
     if(n == k) { return -LOG_NT - double(n) * log10(p); }
 
@@ -866,13 +852,10 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
                 + double(k) * log(p) + double(n-k) * log(1.0 - p);
     double term = exp(log1term);
 
-    // If enough computation in the inv have been made
     if(double_equal(term, 0.0))              
     {
-        if(double(k) > double(n * p))    
-            return -log1term / M_LN10 - LOG_NT;  // end of tail - use just the first term
-        else
-            return -LOG_NT;                      // begin of tail - the tail is roughly 1
+        if(k > n * p) return -log1term / M_LN10 - LOG_NT;
+        else return -LOG_NT;
     }
 
     // Compute more terms if needed
@@ -886,8 +869,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
         bin_tail += term;
         if(bin_term < 1)
         {
-            double err = term * ((1.0 - pow(mult_term, double(n-i+1))) /
-                         (1.0-mult_term) - 1.0);
+            double err = term * ((1 - pow(mult_term, double(n-i+1))) / (1 - mult_term) - 1);
             if(err < tolerance * fabs(-log10(bin_tail) - LOG_NT) * bin_tail) break;
         }
 
@@ -902,11 +884,11 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
 
     // It is assumed that 'theta' and 'a' are in the range [-pi,pi] 
     double n_theta = theta - a;
-    if(n_theta < 0.0) { n_theta = -n_theta; }
+    if(n_theta < 0) { n_theta = -n_theta; }
     if(n_theta > M_3_2_PI)
     {
         n_theta -= M_2__PI;
-        if(n_theta < 0.0) n_theta = -n_theta;
+        if(n_theta < 0) n_theta = -n_theta;
     }
 
     return n_theta <= prec;
@@ -953,8 +935,6 @@ void LSD::showSegments(const std::string& name, const cv::Mat& image, const std:
 
 int LSD::compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
 {
-    //CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
-    
     if (image && image->size() != size) size = image->size();
     CV_Assert(size.area());
 
@@ -988,6 +968,7 @@ int LSD::compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, c
             cv::cvtColor(*image, *image, CV_GRAY2BGR);   
         }
         CV_Assert(image->isContinuous() && I1.isContinuous() && I2.isContinuous());
+        
         for (unsigned int i = 0; i < I1.total(); ++i)
         {
             uchar i1 = I1.data[i];

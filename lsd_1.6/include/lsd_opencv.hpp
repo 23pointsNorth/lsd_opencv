@@ -68,6 +68,7 @@ public:
     LSD(bool _refine = true, int _subdivision = 1, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
+
 /**
  * Detect lines in the input image with the specified ROI.
  *
@@ -88,6 +89,7 @@ public:
     void detect(const cv::InputArray& _image, cv::OutputArray& _lines, cv::Rect _roi = cv::Rect(),
                 cv::OutputArray& width = cv::noArray(), cv::OutputArray& prec = cv::noArray(),
                 cv::OutputArray& nfa = cv::noArray());
+
 /**
  * Draw lines on the given canvas.
  *
@@ -266,15 +268,25 @@ private:
  * @return      The new NFA value.
  */
     double rect_improve(rect& rec) const;
+
+/** 
+ * Calculates the number of correctly aligned points within the rectangle.
+ * @return      The new NFA value.
+ */
     double rect_nfa(const rect& rec) const;
+
+/** 
+ * Computes the NFA values based on the total number of points, points that agree.
+ * n, k, p are the binomial parameters. 
+ * @return      The new NFA value.
+ */
     double nfa(const int& n, const int& k, const double& p) const;
+
 /** 
  * Is the point at place 'address' aligned to angle theta, up to precision 'prec'?
  * @return      Whether the point is aligned.
  */
     bool isAligned(const int& address, const double& theta, const double& prec) const;
-
-
 };
 
 }
