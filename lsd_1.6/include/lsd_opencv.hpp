@@ -65,8 +65,6 @@ public:
  *                      REFINE_STD  - Standard refinement is applied. E.g. breaking arches into smaller line approximations. 
  *                      REFINE_ADV  - Advanced refinement. Number of false alarms is calculated, 
  *                                    lines are refined through increase of precision, decrement in size, etc.
- * @param _subdivision  The factor by which each dimension of the image will be divided into. 2 -> generates 2x2 rois and finds lines in them.
- *                      Note: Using smalled images (higher subdivision factor) will find fines lines.
  * @param _scale        The scale of the image that will be used to find the lines. Range (0..1].
  * @param _sigma_scale  Sigma for Gaussian filter is computed as sigma = _sigma_scale/_scale.
  * @param _quant        Bound to the quantization error on the gradient norm. 
@@ -75,7 +73,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    CV_WRAP LSD(refine_lvl _refine = REFINE_ADV, int _subdivision = 1, double _scale = 0.8, 
+    CV_WRAP LSD(refine_lvl _refine = REFINE_ADV, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
@@ -160,7 +158,6 @@ private:
 
     const double SCALE;
     const refine_lvl doRefine;
-    const int SUBDIVISION;
     const double SIGMA_SCALE;
     const double QUANT;
     const double ANG_TH;

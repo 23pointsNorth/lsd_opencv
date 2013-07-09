@@ -134,15 +134,14 @@ CV_INLINE double log_gamma_lanczos(const double& x)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-LSD::LSD(refine_lvl _refine, int _subdivision, double _scale, double _sigma_scale, double _quant, 
+LSD::LSD(refine_lvl _refine, double _scale, double _sigma_scale, double _quant, 
          double _ang_th, double _log_eps, double _density_th, int _n_bins)
-        :SCALE(_scale), doRefine(_refine), SUBDIVISION(_subdivision), SIGMA_SCALE(_sigma_scale), 
-        QUANT(_quant), ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
+        :SCALE(_scale), doRefine(_refine), SIGMA_SCALE(_sigma_scale), QUANT(_quant),
+        ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
 {
     CV_Assert(_scale > 0 && _sigma_scale > 0 && _quant >= 0 &&
               _ang_th > 0 && _ang_th < 180 && _density_th >= 0 && _density_th < 1 &&
-              _n_bins > 0 && _subdivision > 0);
-    if(_subdivision != 1) { std::cout << "Warning! Subdivision != 1 not implemented. Using 1." << std::endl; }
+              _n_bins > 0);
 }
 
 void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi,
@@ -822,7 +821,7 @@ double LSD::rect_nfa(const rect& rec) const
     
     // Loop around all points in the region and count those that are aligned.
     int min_iter = std::max(min_y->p.y, 0);
-    int max_iter = std::min(min_y->p.y, img_height);
+    int max_iter = std::min(max_y->p.y, img_height - 1);
     for(int y = min_iter; y <= max_iter; ++y)
     {
         int adx = y * img_width + left_x;
