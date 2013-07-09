@@ -821,7 +821,9 @@ double LSD::rect_nfa(const rect& rec) const
     int left_x = min_y->p.x, right_x = min_y->p.x; 
     
     // Loop around all points in the region and count those that are aligned.
-    for(int y = min_y->p.y; y <= max_y->p.y; ++y)
+    int min_iter = std::max(min_y->p.y, 0);
+    int max_iter = std::min(min_y->p.y, img_height);
+    for(int y = min_iter; y <= max_iter; ++y)
     {
         int adx = y * img_width + left_x;
         for(int x = left_x; x <= right_x; ++x, ++adx)
