@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD
 	//
-	// LSD lsd_cv(NO_REFINE); // Do not refine lines
+	// LSD lsd_cv(LSD_NO_REFINE); // Do not refine lines
 	LSD lsd_cv; // Refine founded lines
 	vector<Vec4i> lines;
 	

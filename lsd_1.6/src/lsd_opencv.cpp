@@ -145,8 +145,8 @@ LSD::LSD(refine_lvl _refine, double _scale, double _sigma_scale, double _quant,
 }
 
 void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi,
-                cv::OutputArray width, cv::OutputArray prec,
-                cv::OutputArray nfa)
+                cv::OutputArray _width, cv::OutputArray _prec,
+                cv::OutputArray _nfa)
 {
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);
@@ -165,16 +165,16 @@ void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _
     }
 
     std::vector<Vec4i> lines;
-    std::vector<double>* w = (width.needed())?(new std::vector<double>()):0;
-    std::vector<double>* p = (prec.needed())?(new std::vector<double>()):0;
-    std::vector<double>* n = (nfa.needed())?(new std::vector<double>()):0;
+    std::vector<double>* w = (_width.needed())?(new std::vector<double>()):0;
+    std::vector<double>* p = (_prec.needed())?(new std::vector<double>()):0;
+    std::vector<double>* n = (_nfa.needed())?(new std::vector<double>()):0;
 
     flsd(image, lines, w, p, n);
 
     Mat(lines).copyTo(_lines);
-    if (w) Mat(*w).copyTo(width); 
-    if (p) Mat(*p).copyTo(prec);
-    if (n) Mat(*n).copyTo(nfa);
+    if (w) Mat(*w).copyTo(_width); 
+    if (p) Mat(*p).copyTo(_prec);
+    if (n) Mat(*n).copyTo(_nfa);
 
     delete w;
     delete p;
@@ -190,7 +190,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
     const double p = ANG_TH / 180;
     const double rho = QUANT / sin(prec);    // gradient magnitude threshold
  
-    vector<coorlist> list;
+    std::vector<coorlist> list;
     if (SCALE != 1)
     {
         Mat gaussian_img;
@@ -215,7 +215,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
     // // Initialize region only when needed
     // Mat region = Mat::zeros(scaled_image.size(), CV_8UC1);
     used = Mat_<uchar>::zeros(scaled_image.size()); // zeros = NOTUSED
-    vector<RegionPoint> reg(img_width * img_height);
+    std::vector<RegionPoint> reg(img_width * img_height);
     
     // Search for line segments 
     unsigned int ls_count = 0;
@@ -237,12 +237,12 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
             double log_nfa = -1;
-            if(doRefine > NO_REFINE)
+            if(doRefine > LSD_NO_REFINE)
             {
                 // At least REFINE_STANDARD lvl.
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
 
-                if(doRefine >= REFINE_ADV)
+                if(doRefine >= LSD_REFINE_ADV)
                 {
                     // Compute NFA
                     log_nfa = rect_improve(rec);
@@ -276,7 +276,7 @@ void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines,
             lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
             if (widths) widths->push_back(rec.width);
             if (precisions) precisions->push_back(rec.p);
-            if (nfas && doRefine >= REFINE_ADV) nfas->push_back(log_nfa);
+            if (nfas && doRefine >= LSD_REFINE_ADV) nfas->push_back(log_nfa);
 
             // //Add the linesID to the region on the image
             // for(unsigned int el = 0; el < reg_size; el++)
@@ -339,9 +339,9 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     }
     
     // Compute histogram of gradient values
-    list = vector<coorlist>(img_width * img_height);
-    vector<coorlist*> range_s(n_bins);
-    vector<coorlist*> range_e(n_bins);
+    list = std::vector<coorlist>(img_width * img_height);
+    std::vector<coorlist*> range_s(n_bins);
+    std::vector<coorlist*> range_e(n_bins);
     unsigned int count = 0;
     double bin_coef = (max_grad > 0) ? double(n_bins - 1) / max_grad : 0; // If all image is smooth, max_grad <= 0
 
@@ -884,8 +884,9 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
 
 CV_INLINE bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
+    if(address < 0) { return false; }
     const double& a = angles_data[address];
-    if (a == NOTDEF) { return false; }
+    if(a == NOTDEF) { return false; }
 
     // It is assumed that 'theta' and 'a' are in the range [-pi,pi] 
     double n_theta = theta - a;
@@ -915,7 +916,7 @@ void LSD::drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines)
     }
     
     // Create a 3 channel image in order to draw colored lines
-    vector<Mat> planes;
+    std::vector<Mat> planes;
     planes.push_back(gray);
     planes.push_back(gray);
     planes.push_back(gray);
