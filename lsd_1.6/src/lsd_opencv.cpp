@@ -44,6 +44,7 @@
 #include <cmath>
 #include <climits>
 #include <cfloat>
+#include <vector>
 
 #include <iostream>
 
@@ -169,7 +170,7 @@ void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _
     std::vector<double>* p = (_prec.needed())?(new std::vector<double>()):0;
     std::vector<double>* n = (_nfa.needed())?(new std::vector<double>()):0;
 
-    flsd(image, lines, w, p, n);
+    flsd(lines, w, p, n);
 
     Mat(lines).copyTo(_lines);
     if (w) Mat(*w).copyTo(_width); 
@@ -181,7 +182,7 @@ void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _
     delete n;
 }
 
-void LSD::flsd(const Mat_<double>& _image, std::vector<Vec4i>& lines, 
+void LSD::flsd(std::vector<Vec4i>& lines, 
     std::vector<double>* widths, std::vector<double>* precisions, 
     std::vector<double>* nfas)
 {

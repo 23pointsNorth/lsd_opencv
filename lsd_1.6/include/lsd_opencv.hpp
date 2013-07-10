@@ -194,7 +194,6 @@ private:
 /**
  * Detect lines in the whole input image.
  *
- * @param _image        A grayscale(CV_8UC1) input image. 
  * @param lines         Return: A vector of Vec4i elements specifying the beginning and ending point of a line.
  *                              Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end. 
  *                              Returned lines are strictly oriented depending on the gradient.
@@ -206,8 +205,7 @@ private:
  *                                  * 0 corresponds to 1 mean false alarm
  *                                  * 1 corresponds to 0.1 mean false alarms
  */
-    void flsd(const cv::Mat_<double>& _image,
-              std::vector<cv::Vec4i>& lines, 
+    void flsd(std::vector<cv::Vec4i>& lines, 
               std::vector<double>* widths, std::vector<double>* precisions, 
               std::vector<double>* nfas);
 
