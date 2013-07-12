@@ -56,18 +56,18 @@
 
 using namespace cv;
 
-CV_INLINE double distSq(const double x1, const double y1, const double x2, const double y2)
+inline double distSq(const double x1, const double y1, const double x2, const double y2)
 {
     return (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
 }
 
-CV_INLINE double dist(const double x1, const double y1, const double x2, const double y2)
+inline double dist(const double x1, const double y1, const double x2, const double y2)
 {
     return sqrt(distSq(x1, y1, x2, y2));
 }
 
 // Signed angle difference
-CV_INLINE double angle_diff_signed(const double& a, const double& b)
+inline double angle_diff_signed(const double& a, const double& b)
 {
     double diff = a - b;
     while(diff <= -M_PI) diff += M_2__PI;
@@ -76,13 +76,13 @@ CV_INLINE double angle_diff_signed(const double& a, const double& b)
 }
 
 // Absolute value angle difference
-CV_INLINE double angle_diff(const double& a, const double& b)
+inline double angle_diff(const double& a, const double& b)
 {
     return std::fabs(angle_diff_signed(a, b));
 }
 
 // Compare doubles by relative error.
-CV_INLINE bool double_equal(const double& a, const double& b)
+inline bool double_equal(const double& a, const double& b)
 {
     // trivial case
     if(a == b) return true;
@@ -97,7 +97,7 @@ CV_INLINE bool double_equal(const double& a, const double& b)
     return (abs_diff / abs_max) <= (RELATIVE_ERROR_FACTOR * DBL_EPSILON);
 }
 
-CV_INLINE bool AsmallerB_XoverY(const edge& a, const edge& b)
+inline bool AsmallerB_XoverY(const edge& a, const edge& b)
 {
     if (a.p.x == b.p.x) return a.p.y < b.p.y;
     else return a.p.x < b.p.x;
@@ -108,7 +108,7 @@ CV_INLINE bool AsmallerB_XoverY(const edge& a, const edge& b)
  *   the gamma function of x using Windschitl method.
  *   See http://www.rskey.org/gamma.htm
  */
-CV_INLINE double log_gamma_windschitl(const double& x)
+inline double log_gamma_windschitl(const double& x)
 {
     return 0.918938533204673 + (x-0.5)*log(x) - x
          + 0.5*x*log( x*sinh(1/x) + 1/(810.0*pow(x,6.0)));
@@ -119,13 +119,13 @@ CV_INLINE double log_gamma_windschitl(const double& x)
  *   the gamma function of x using the Lanczos approximation.
  *   See http://www.rskey.org/gamma.htm
  */
-CV_INLINE double log_gamma_lanczos(const double& x)
+inline double log_gamma_lanczos(const double& x)
 {
     static double q[7] = { 75122.6331530, 80916.6278952, 36308.2951477,
                          8687.24529705, 1168.92649479, 83.8676043424,
                          2.50662827511 };
     double a = (x + 0.5) * log(x + 5.5) - (x + 5.5);
-    double b = 0.0;
+    double b = 0;
     for(int n = 0; n < 7; ++n)
     {
         a -= log(x + double(n));
@@ -166,9 +166,9 @@ void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _
     }
 
     std::vector<Vec4i> lines;
-    std::vector<double>* w = (_width.needed())?(new std::vector<double>()):0;
-    std::vector<double>* p = (_prec.needed())?(new std::vector<double>()):0;
-    std::vector<double>* n = (_nfa.needed())?(new std::vector<double>()):0;
+    std::vector<double>* w = (_width.needed())?(new std::vector<double>()) : 0;
+    std::vector<double>* p = (_prec.needed())?(new std::vector<double>()) : 0;
+    std::vector<double>* n = (_nfa.needed())?(new std::vector<double>()) : 0;
 
     flsd(lines, w, p, n);
 
@@ -238,7 +238,7 @@ void LSD::flsd(std::vector<Vec4i>& lines,
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
             double log_nfa = -1;
-            if(doRefine > LSD_NO_REFINE)
+            if(doRefine > LSD_REFINE_NONE)
             {
                 // At least REFINE_STANDARD lvl.
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
@@ -274,7 +274,7 @@ void LSD::flsd(std::vector<Vec4i>& lines,
             }
 
             //Store the relevant data
-            lines.push_back(cv::Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
+            lines.push_back(Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
             if (widths) widths->push_back(rec.width);
             if (precisions) precisions->push_back(rec.p);
             if (nfas && doRefine >= LSD_REFINE_ADV) nfas->push_back(log_nfa);
@@ -858,7 +858,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
                 + double(k) * log(p) + double(n-k) * log(1.0 - p);
     double term = exp(log1term);
 
-    if(double_equal(term, 0.0))              
+    if(double_equal(term, 0))              
     {
         if(k > n * p) return -log1term / M_LN10 - LOG_NT;
         else return -LOG_NT;
@@ -867,9 +867,9 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
     // Compute more terms if needed
     double bin_tail = term;
     double tolerance = 0.1; // an error of 10% in the result is accepted
-    for(unsigned int i = k + 1; i <= n; ++i)
+    for(int i = k + 1; i <= n; ++i)
     {
-        double bin_term = double(n-i+1) / double(i);
+        double bin_term = double(n - i + 1) / double(i);
         double mult_term = bin_term * p_term;
         term *= mult_term;
         bin_tail += term;
@@ -883,7 +883,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
     return -log10(bin_tail) - LOG_NT;
 }
 
-CV_INLINE bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
+inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
 {
     if(address < 0) { return false; }
     const double& a = angles_data[address];
@@ -990,7 +990,7 @@ int LSD::compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, c
             }
         }
     }
-    
+
     return N;
 }
 

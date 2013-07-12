@@ -48,12 +48,12 @@
 namespace cv {
 
 enum refine_lvl{
-    LSD_NO_REFINE = 0, 
+    LSD_REFINE_NONE = 0, 
     LSD_REFINE_STD = 1, 
     LSD_REFINE_ADV = 2
 };
 
-class CV_EXPORTS LSD
+class CV_EXPORTS_W LSD
 {
 public:
 
@@ -73,7 +73,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    CV_WRAP LSD(refine_lvl _refine = LSD_REFINE_ADV, double _scale = 0.8, 
+    CV_WRAP LSD(refine_lvl _refine = LSD_REFINE_STD, double _scale = 0.8, 
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5, 
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
