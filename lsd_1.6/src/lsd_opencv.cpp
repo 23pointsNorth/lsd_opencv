@@ -1,4 +1,4 @@
-/*///////////////////////////////////////////////////////////////////////////////////////
+/*M///////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
 //
 //  By downloading, copying, installing or using the software you agree to this license.
@@ -37,7 +37,7 @@
 // or tort (including negligence or otherwise) arising in any way out of
 // the use of this software, even if advised of the possibility of such damage.
 //
-//*/
+//M*/
 
 #include <cstdio>
 #include <cstdlib>
@@ -940,13 +940,14 @@ void LSD::showSegments(const std::string& name, const cv::Mat& image, const std:
     imshow(name.c_str(), img);
 }
 
-int LSD::compareSegments(cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
+int LSD::compareSegments(const cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
 {
-    if (image && image->size() != size) size = image->size();
-    CV_Assert(size.area());
+    Size sz = size;
+    if (image && image->size() != size) sz = image->size();
+    CV_Assert(sz.area());
 
-    Mat_<uchar> I1 = Mat_<uchar>::zeros(size);
-    Mat_<uchar> I2 = Mat_<uchar>::zeros(size);
+    Mat_<uchar> I1 = Mat_<uchar>::zeros(sz);
+    Mat_<uchar> I2 = Mat_<uchar>::zeros(sz);
 
     // Draw segments
     for(unsigned int i = 0; i < lines1.size(); ++i)
