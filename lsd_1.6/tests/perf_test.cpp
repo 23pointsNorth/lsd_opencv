@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD NO refinement settings test
 	//
-	LSD lsd_no(LSD_NO_REFINE); // Do not refine lines
+	LSD lsd_no(LSD_REFINE_NONE); // Do not refine lines
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{

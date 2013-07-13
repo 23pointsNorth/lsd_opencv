@@ -39,7 +39,7 @@ void checkWhiteNoise()
 	std::cout << "White Noise    - Number of lines: " << lines.size() << " - 0 Wanted." << std::endl;
 }
 
-void checkRectangle()
+void checkRotatedRectangle()
 {
 	RNG rng(getTickCount());
 	Mat filledRect = Mat::zeros(sz, CV_8UC1);
@@ -60,38 +60,34 @@ void checkRectangle()
 		line(filledRect, vertices[i], vertices[(i + 1) % 4], Scalar(255));
 	}
 
-	Rect brect = rRect.boundingRect();
-	rectangle(filledRect, brect, Scalar(255));
-
-
 	vector<Vec4i> lines;
-	LSD ls;
+	LSD ls(LSD_REFINE_STD);
 	ls.detect(filledRect, lines);
 	
-	LSD::showSegments("checkRectangle", filledRect, lines);
+	LSD::showSegments("checkRotatedRectangle", filledRect, lines);
 	
-	std::cout << "Check Rectangle - Number of lines: " << lines.size() << " - 20 Wanted." << std::endl;
+	std::cout << "Check Rectangle - Number of lines: " << lines.size() << " - >= 4 Wanted." << std::endl;
 }
 
-void checkHorizonalLines()
+void checkLines()
 {
 	RNG rng(getTickCount());
 	Mat horzLines(sz, CV_8UC1, Scalar::all(rng.uniform(0, 128)));
 	
-	const int numLines = 5;
+	const int numLines = 1;
 	for(unsigned int i = 0; i < numLines; ++i)
 	{
-		int y = rng.uniform(10, sz.height - 10);
-		Point p1(10, y);
-		Point p2(sz.width - 10, y);
+		int y = rng.uniform(10, sz.width - 10);
+		Point p1(y, 10);
+		Point p2(y, sz.height - 10);
 		line(horzLines, p1, p2, Scalar(255), 1);
 	}
 
 	vector<Vec4i> lines;
-	LSD ls;
+	LSD ls(LSD_REFINE_ADV);
 	ls.detect(horzLines, lines);
 	
-	LSD::showSegments("checkHorizonalLines", horzLines, lines);
+	LSD::showSegments("checkLines", horzLines, lines);
 	
 	std::cout << "Constant Color - Number of lines: " << lines.size() << " - " << numLines * 2 << " Wanted." << std::endl;
 }
@@ -100,8 +96,8 @@ int main()
 {
 	checkWhiteNoise();
 	checkConstantColor();
-	checkRectangle();
-	checkHorizonalLines();
+	checkRotatedRectangle();
+	checkLines();
 	cv::waitKey(0);
 	return 0;
 }
