@@ -20,3 +20,6 @@ target_link_libraries(lsd_wrap_cmd lsd_wrap ${OpenCV_LIBS})
 
 add_executable(lsd_opencv_cmd lsd_opencv_cmd.cpp)
 target_link_libraries(lsd_opencv_cmd lsd_opencv ${OpenCV_LIBS})
+
+add_executable(lsd_lines lsd_lines.cpp)
+target_link_libraries(lsd_lines lsd_opencv ${OpenCV_LIBS})
