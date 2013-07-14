@@ -29,6 +29,6 @@ const double DEG_TO_RADS = M_PI / 180;
 
 struct edge
 {
-    cv::Point p;
+    cv::Point2i p;
     bool taken;
 };

@@ -274,7 +274,7 @@ void LSD::flsd(std::vector<Vec4i>& lines,
             }
 
             //Store the relevant data
-            lines.push_back(Vec4i(rec.x1, rec.y1, rec.x2, rec.y2));
+            lines.push_back(Vec4i(int(rec.x1), int(rec.y1), int(rec.x2), int(rec.y2)));
             if (widths) widths->push_back(rec.width);
             if (precisions) precisions->push_back(rec.p);
             if (nfas && doRefine >= LSD_REFINE_ADV) nfas->push_back(log_nfa);
@@ -401,8 +401,8 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
     reg[0].angle = reg_angle;
     reg[0].modgrad = modgrad_data[addr];
 
-    float sumdx = cos(reg_angle);
-    float sumdy = sin(reg_angle);
+    float sumdx = float(std::cos(reg_angle));
+    float sumdy = float(std::sin(reg_angle));
     *reg[0].used = USED;
 
     //Try neighboring regions
@@ -825,8 +825,8 @@ double LSD::rect_nfa(const rect& rec) const
     int max_iter = std::min(max_y->p.y, img_height - 1);
     for(int y = min_iter; y <= max_iter; ++y)
     {
-        int adx = y * img_width + left_x;
-        for(int x = left_x; x <= right_x; ++x, ++adx)
+        int adx = y * img_width + int(left_x);
+        for(int x = int(left_x); x <= int(right_x); ++x, ++adx)
         {
             ++total_pts;
             if(isAligned(adx, rec.theta, rec.prec))
