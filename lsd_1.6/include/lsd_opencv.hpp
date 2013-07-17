@@ -105,7 +105,7 @@ public:
  *                  Should have the size of the image, where the lines were found
  * @param lines     The lines that need to be drawn
  */
-    static void drawSegments(Mat& image, const std::vector<Vec4i>& lines);
+    static void drawSegments(InputOutputArray image, const InputArray lines);
 
 /**
  * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
@@ -116,7 +116,7 @@ public:
  * @param lines2    The second lines that need to be drawn. Color - Red.
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
-    static int compareSegments(const Size& size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image = 0);
+    static int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* image = 0);
 
 /*
  * Shows the lines in a window.

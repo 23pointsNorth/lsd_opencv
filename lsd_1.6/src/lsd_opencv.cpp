@@ -941,14 +941,14 @@ inline bool LineSegmentDetector::isAligned(const int& address, const double& the
 }
 
 
-void LineSegmentDetector::drawSegments(Mat& image, const std::vector<Vec4i>& lines)
+void LineSegmentDetector::drawSegments(InputOutputArray image, const InputArray lines)
 {
     CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
 
     Mat gray;
     if (image.channels() == 1)
     {
-        gray = image;
+        gray = image.getMatRef();
     }
     else if (image.channels() == 3)
     {
@@ -963,17 +963,21 @@ void LineSegmentDetector::drawSegments(Mat& image, const std::vector<Vec4i>& lin
 
     merge(planes, image);
 
+    Mat _lines;
+    _lines = lines.getMat();
+
     // Draw segments
-    for(unsigned int i = 0; i < lines.size(); ++i)
+    for(unsigned int i = 0; i < _lines.size().width; ++i)
     {
-        Point b(lines[i][0], lines[i][1]);
-        Point e(lines[i][2], lines[i][3]);
-        line(image, b, e, Scalar(0, 0, 255), 1);
+        const Vec4i& v = _lines.at<Vec4i>(i);
+        Point b(v[0], v[1]);
+        Point e(v[2], v[3]);
+        line(image.getMatRef(), b, e, Scalar(0, 0, 255), 1);
     }
 }
 
 
-int LineSegmentDetector::compareSegments(const Size& size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
+int LineSegmentDetector::compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* image)
 {
     Size sz = size;
     if (image && image->size() != size) sz = image->size();
@@ -982,17 +986,22 @@ int LineSegmentDetector::compareSegments(const Size& size, const std::vector<Vec
     Mat_<uchar> I1 = Mat_<uchar>::zeros(sz);
     Mat_<uchar> I2 = Mat_<uchar>::zeros(sz);
 
+    Mat _lines1;
+    Mat _lines2;
+    _lines1 = lines1.getMat();
+    _lines2 = lines2.getMat();
     // Draw segments
-    for(unsigned int i = 0; i < lines1.size(); ++i)
+    std::vector<Mat> _lines;
+    for(unsigned int i = 0; i < _lines1.size().width; ++i)
     {
-        Point b(lines1[i][0], lines1[i][1]);
-        Point e(lines1[i][2], lines1[i][3]);
+        Point b(_lines1.at<Vec4i>(i)[0], _lines1.at<Vec4i>(i)[1]);
+        Point e(_lines1.at<Vec4i>(i)[2], _lines1.at<Vec4i>(i)[3]);
         line(I1, b, e, Scalar::all(255), 1);
     }
-    for(unsigned int i = 0; i < lines2.size(); ++i)
+    for(unsigned int i = 0; i < _lines2.size().width; ++i)
     {
-        Point b(lines2[i][0], lines2[i][1]);
-        Point e(lines2[i][2], lines2[i][3]);
+        Point b(_lines2.at<Vec4i>(i)[0], _lines2.at<Vec4i>(i)[1]);
+        Point e(_lines2.at<Vec4i>(i)[2], _lines2.at<Vec4i>(i)[3]);
         line(I2, b, e, Scalar::all(255), 1);
     }
 
