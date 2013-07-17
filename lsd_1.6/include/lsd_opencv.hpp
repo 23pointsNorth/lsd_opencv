@@ -47,20 +47,19 @@
 
 namespace cv {
 
-enum {LSD_REFINE_NONE = 0,
-      LSD_REFINE_STD = 1, 
-      LSD_REFINE_ADV = 2
-};
-
 class CV_EXPORTS_W LSD
 {
 public:
 
+    enum {REFINE_NONE = 0,
+          REFINE_STD  = 1, 
+          REFINE_ADV  = 2
+    };
 /**
  * Create an LSD object. Specifying scale, number of subdivisions for the image, should the lines be refined and other constants as follows:
  *
  * @param _refine       How should the lines found be refined?
- *                      NO_REFINE   - No refinement applied.
+ *                      REFINE_NONE - No refinement applied.
  *                      REFINE_STD  - Standard refinement is applied. E.g. breaking arches into smaller line approximations.
  *                      REFINE_ADV  - Advanced refinement. Number of false alarms is calculated,
  *                                    lines are refined through increase of precision, decrement in size, etc.
@@ -72,7 +71,7 @@ public:
  * @param _density_th   Minimal density of aligned region points in rectangle.
  * @param _n_bins       Number of bins in pseudo-ordering of gradient modulus.
  */
-    CV_WRAP LSD(int _refine = LSD_REFINE_STD, double _scale = 0.8,
+    CV_WRAP LSD(int _refine = REFINE_STD, double _scale = 0.8,
         double _sigma_scale = 0.6, double _quant = 2.0, double _ang_th = 22.5,
         double _log_eps = 0, double _density_th = 0.7, int _n_bins = 1024);
 
@@ -92,6 +91,7 @@ public:
  *                              * -1 corresponds to 10 mean false alarms
  *                              * 0 corresponds to 1 mean false alarm
  *                              * 1 corresponds to 0.1 mean false alarms
+ *                          This vector will be calculated _only_ when the objects type is REFINE_ADV
  */
     CV_WRAP void detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi = cv::Rect(),
                 cv::OutputArray width = cv::noArray(), cv::OutputArray prec = cv::noArray(),
@@ -155,6 +155,10 @@ private:
     cv::Rect roi;
     int roix, roiy;
 
+    bool w_needed;
+    bool p_needed;
+    bool n_needed;
+
     const double SCALE;
     const int doRefine;
     const double SIGMA_SCALE;
@@ -205,8 +209,8 @@ private:
  *                                  * 1 corresponds to 0.1 mean false alarms
  */
     void flsd(std::vector<cv::Vec4i>& lines, 
-              std::vector<double>* widths, std::vector<double>* precisions,
-              std::vector<double>* nfas);
+              std::vector<double> widths, std::vector<double> precisions,
+              std::vector<double> nfas);
 
 /**
  * Finds the angles and the gradients of the image. Generates a list of pseudo ordered points.

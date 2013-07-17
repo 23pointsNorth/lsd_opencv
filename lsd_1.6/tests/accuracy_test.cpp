@@ -61,7 +61,7 @@ void checkRotatedRectangle()
 	}
 
 	vector<Vec4i> lines;
-	LSD ls(LSD_REFINE_STD);
+	LSD ls(LSD::REFINE_STD);
 	ls.detect(filledRect, lines);
 	
 	LSD::showSegments("checkRotatedRectangle", filledRect, lines);
@@ -84,7 +84,7 @@ void checkLines()
 	}
 
 	vector<Vec4i> lines;
-	LSD ls(LSD_REFINE_ADV);
+	LSD ls(LSD::REFINE_ADV);
 	ls.detect(horzLines, lines);
 	
 	LSD::showSegments("checkLines", horzLines, lines);

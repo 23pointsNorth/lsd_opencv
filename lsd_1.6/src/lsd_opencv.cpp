@@ -92,12 +92,14 @@ struct edge
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-inline double distSq(const double x1, const double y1, const double x2, const double y2)
+inline double distSq(const double x1, const double y1, 
+                     const double x2, const double y2)
 {
     return (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
 }
 
-inline double dist(const double x1, const double y1, const double x2, const double y2)
+inline double dist(const double x1, const double y1, 
+                   const double x2, const double y2)
 {
     return sqrt(distSq(x1, y1, x2, y2));
 }
@@ -171,6 +173,8 @@ inline double log_gamma_lanczos(const double& x)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+namespace cv{
+
 LSD::LSD(int _refine, double _scale, double _sigma_scale, double _quant,
         double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SIGMA_SCALE(_sigma_scale), QUANT(_quant),
@@ -181,9 +185,8 @@ LSD::LSD(int _refine, double _scale, double _sigma_scale, double _quant,
               _n_bins > 0);
 }
 
-void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _roi,
-                cv::OutputArray _width, cv::OutputArray _prec,
-                cv::OutputArray _nfa)
+void LSD::detect(const InputArray _image, OutputArray _lines, Rect _roi,
+                OutputArray _width, OutputArray _prec, OutputArray _nfa)
 {
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);
@@ -202,25 +205,25 @@ void LSD::detect(const cv::InputArray _image, cv::OutputArray _lines, cv::Rect _
     }
 
     std::vector<Vec4i> lines;
-    std::vector<double>* w = (_width.needed())?(new std::vector<double>()) : 0;
-    std::vector<double>* p = (_prec.needed())?(new std::vector<double>()) : 0;
-    std::vector<double>* n = (_nfa.needed())?(new std::vector<double>()) : 0;
+    std::vector<double> w, p, n;
+    w_needed = _width.needed();
+    p_needed = _prec.needed();
+    n_needed = _nfa.needed();
+
+    CV_Assert(!_nfa.needed() ||                         // NFA InputArray will be filled _only_ when 
+              _nfa.needed() && doRefine >= REFINE_ADV); // REFINE_ADV type LineSegmentDetector object is created.
 
     flsd(lines, w, p, n);
 
     Mat(lines).copyTo(_lines);
-    if(w) Mat(*w).copyTo(_width);
-    if(p) Mat(*p).copyTo(_prec);
-    if(n) Mat(*n).copyTo(_nfa);
-
-    delete w;
-    delete p;
-    delete n;
+    if(w_needed) Mat(w).copyTo(_width);
+    if(p_needed) Mat(p).copyTo(_prec);
+    if(n_needed) Mat(n).copyTo(_nfa);
 }
 
 void LSD::flsd(std::vector<Vec4i>& lines,
-    std::vector<double>* widths, std::vector<double>* precisions,
-    std::vector<double>* nfas)
+    std::vector<double> widths, std::vector<double> precisions,
+    std::vector<double> nfas)
 {
     // Angle tolerance
     const double prec = M_PI * ANG_TH / 180;
@@ -274,12 +277,12 @@ void LSD::flsd(std::vector<Vec4i>& lines,
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
             double log_nfa = -1;
-            if(doRefine > LSD_REFINE_NONE)
+            if(doRefine > REFINE_NONE)
             {
                 // At least REFINE_STANDARD lvl.
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
 
-                if(doRefine >= LSD_REFINE_ADV)
+                if(doRefine >= REFINE_ADV)
                 {
                     // Compute NFA
                     log_nfa = rect_improve(rec);
@@ -311,9 +314,9 @@ void LSD::flsd(std::vector<Vec4i>& lines,
 
             //Store the relevant data
             lines.push_back(Vec4i(int(rec.x1), int(rec.y1), int(rec.x2), int(rec.y2)));
-            if (widths) widths->push_back(rec.width);
-            if (precisions) precisions->push_back(rec.p);
-            if (nfas && doRefine >= LSD_REFINE_ADV) nfas->push_back(log_nfa);
+            if (w_needed) widths.push_back(rec.width);
+            if (p_needed) precisions.push_back(rec.p);
+            if (n_needed && doRefine >= REFINE_ADV) nfas.push_back(log_nfa);
 
             // //Add the linesID to the region on the image
             // for(unsigned int el = 0; el < reg_size; el++)
@@ -324,11 +327,12 @@ void LSD::flsd(std::vector<Vec4i>& lines,
     }
 }
 
-void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vector<coorlist>& list)
+void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, 
+                   std::vector<coorlist>& list)
 {
     //Initialize data
-    angles = cv::Mat_<double>(scaled_image.size());
-    modgrad = cv::Mat_<double>(scaled_image.size());
+    angles = Mat_<double>(scaled_image.size());
+    modgrad = Mat_<double>(scaled_image.size());
 
     angles_data = angles.ptr<double>(0);
     modgrad_data = modgrad.ptr<double>(0);
@@ -365,7 +369,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
             }
             else
             {
-                angles_data[addr] = cv::fastAtan2(float(gx), float(-gy)) * DEG_TO_RADS;  // gradient angle computation
+                angles_data[addr] = fastAtan2(float(gx), float(-gy)) * DEG_TO_RADS;  // gradient angle computation
                 if (norm > max_grad) { max_grad = norm; }
             }
 
@@ -397,7 +401,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
                 range_e[i] = &list[count];
                 ++count;
             }
-            range_e[i]->p = cv::Point(x, y);
+            range_e[i]->p = Point(x, y);
             range_e[i]->next = 0;
         }
     }
@@ -421,7 +425,7 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, std::vec
     }
 }
 
-void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
+void LSD::region_grow(const Point2i& s, std::vector<RegionPoint>& reg,
                       int& reg_size, double& reg_angle, const double& prec)
 {
     // Point to this region
@@ -467,7 +471,7 @@ void LSD::region_grow(const cv::Point2i& s, std::vector<RegionPoint>& reg,
                     sumdx += cos(float(angle));
                     sumdy += sin(float(angle));
                     // reg_angle is used in the isAligned, so it needs to be updates?
-                    reg_angle = cv::fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
+                    reg_angle = fastAtan2(sumdy, sumdx) * DEG_TO_RADS;
                 }
             }
         }
@@ -560,8 +564,8 @@ double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, 
 
     // Compute angle
     double theta = (fabs(Ixx)>fabs(Iyy))?
-                    double(cv::fastAtan2(float(lambda - Ixx), float(Ixy))):
-                    double(cv::fastAtan2(float(Ixy), float(lambda - Iyy))); // in degs
+                    double(fastAtan2(float(lambda - Ixx), float(Ixy))):
+                    double(fastAtan2(float(Ixy), float(lambda - Iyy))); // in degs
     theta *= DEG_TO_RADS;
 
     // Correct angle by 180 deg if necessary
@@ -650,7 +654,8 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
         region2rect(reg, reg_size ,reg_angle, prec, p, rec);
 
         // Re-compute region points density
-        density = double(reg_size) / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
+        density = double(reg_size) / 
+                  (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
     }
 
     return true;
@@ -936,7 +941,7 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
 }
 
 
-void LSD::drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines)
+void LSD::drawSegments(Mat& image, const std::vector<Vec4i>& lines)
 {
     CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
 
@@ -947,7 +952,7 @@ void LSD::drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines)
     }
     else if (image.channels() == 3)
     {
-        cv::cvtColor(image, gray, CV_BGR2GRAY);
+        cvtColor(image, gray, CV_BGR2GRAY);
     }
 
     // Create a 3 channel image in order to draw colored lines
@@ -968,7 +973,7 @@ void LSD::drawSegments(cv::Mat& image, const std::vector<cv::Vec4i>& lines)
 }
 
 
-int LSD::compareSegments(const cv::Size& size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
+int LSD::compareSegments(const Size& size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
 {
     Size sz = size;
     if (image && image->size() != size) sz = image->size();
@@ -1001,7 +1006,7 @@ int LSD::compareSegments(const cv::Size& size, const std::vector<cv::Vec4i>& lin
         Mat Ig;
         if (image->channels() == 1)
         {
-            cv::cvtColor(*image, *image, CV_GRAY2BGR);
+            cvtColor(*image, *image, CV_GRAY2BGR);
         }
         CV_Assert(image->isContinuous() && I1.isContinuous() && I2.isContinuous());
 
@@ -1023,14 +1028,14 @@ int LSD::compareSegments(const cv::Size& size, const std::vector<cv::Vec4i>& lin
     return N;
 }
 
-void LSD::showSegments(const std::string& name, const cv::Mat& image, const std::vector<cv::Vec4i>& lines)
+void LSD::showSegments(const std::string& name, const Mat& image, const std::vector<Vec4i>& lines)
 {
     Mat img = image.clone();
     drawSegments(img, lines);
     imshow(name.c_str(), img);
 }
 
-int LSD::showSegments(const std::string& name, cv::Size size, const std::vector<cv::Vec4i>& lines1, const std::vector<cv::Vec4i> lines2, cv::Mat* image)
+int LSD::showSegments(const std::string& name, Size size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
 {
     Mat img;
     if (!image) img = Mat_<uchar>::zeros(size); 
@@ -1039,3 +1044,5 @@ int LSD::showSegments(const std::string& name, cv::Size size, const std::vector<
     imshow(name.c_str(), img);
     return n;
 }
+
+} // namespace cv
