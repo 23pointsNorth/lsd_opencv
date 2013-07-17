@@ -80,6 +80,9 @@ public:
  * Detect lines in the input image with the specified ROI.
  *
  * @param _image    A grayscale(CV_8UC1) input image.
+ *                  If only a roi needs to be selected, use
+ *                  lsd_ptr->detect(image(roi), ..., lines);
+ *                  lines += Scalar(roi.x, roi.y, roi.x, roi.y);
  * @param _lines    Return: A vector of Vec4i elements specifying the beginning and ending point of a line.
  *                          Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end.
  *                          Returned lines are strictly oriented depending on the gradient.
@@ -94,7 +97,7 @@ public:
  *                              * 1 corresponds to 0.1 mean false alarms
  *                          This vector will be calculated _only_ when the objects type is REFINE_ADV
  */
-    CV_WRAP void detect(const InputArray _image, OutputArray _lines, Rect _roi = Rect(),
+    CV_WRAP void detect(const InputArray _image, OutputArray _lines,
                         OutputArray width = noArray(), OutputArray prec = noArray(),
                         OutputArray nfa = noArray());
 
@@ -152,9 +155,6 @@ private:
     int img_width;
     int img_height;
     double LOG_NT;
-
-    Rect roi;
-    int roix, roiy;
 
     bool w_needed;
     bool p_needed;

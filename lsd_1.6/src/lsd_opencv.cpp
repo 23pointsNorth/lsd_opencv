@@ -183,24 +183,14 @@ LineSegmentDetector::LineSegmentDetector(int _refine, double _scale, double _sig
               _n_bins > 0);
 }
 
-void LineSegmentDetector::detect(const InputArray _image, OutputArray _lines, Rect _roi,
+void LineSegmentDetector::detect(const InputArray _image, OutputArray _lines,
                 OutputArray _width, OutputArray _prec, OutputArray _nfa)
 {
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);
 
-    // If default, then convert the whole image, else just the specified by roi
-    roi = _roi;
-    if (roi.area() == 0)
-    {
-        img.convertTo(image, CV_64FC1);
-    }
-    else
-    {
-        roix = roi.x;
-        roiy = roi.y;
-        img(roi).convertTo(image, CV_64FC1);
-    }
+    // Convert image to double
+    img.convertTo(image, CV_64FC1);
 
     std::vector<Vec4i> lines;
     std::vector<double> w, p, n;
@@ -300,14 +290,6 @@ void LineSegmentDetector::flsd(std::vector<Vec4i>& lines,
                 rec.x1 /= SCALE; rec.y1 /= SCALE;
                 rec.x2 /= SCALE; rec.y2 /= SCALE;
                 rec.width /= SCALE;
-            }
-
-            if(roi.area()) // if a roi has been given by the user, adjust coordinates
-            {
-                rec.x1 += roix;
-                rec.y1 += roiy;
-                rec.x2 += roix;
-                rec.y2 += roiy;
             }
 
             //Store the relevant data

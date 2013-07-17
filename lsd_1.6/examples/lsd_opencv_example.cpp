@@ -22,22 +22,22 @@ int main(void)
     img2.copyTo(right);
     imshow("Image", img3);
 
-    // LSD call 
+    // LSD call
     std::vector<Vec4i> lines;
     std::vector<double> width, prec, nfa;
     LineSegmentDetector ls(LSD_REFINE_ADV);
-    
+
     double start = double(getTickCount());
-    ls.detect(img3, lines, Rect(), width, prec, nfa); 
+    ls.detect(img3, lines, width, prec, nfa);
     double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
-    
+
     std::cout << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
     for (unsigned int i = 0; i < lines.size(); ++i)
     {
-        cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1] 
+        cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1]
              << " E: " << lines[i][2] << " " << lines[i][3]
-             << " W: " << width[i] 
-             << " P:" << prec[i] 
+             << " W: " << width[i]
+             << " P:" << prec[i]
              << " NFA:" << nfa[i] << std::endl;
     }
 
