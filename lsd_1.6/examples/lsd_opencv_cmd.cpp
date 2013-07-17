@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	// LSD call 
 	std::vector<Vec4i> lines;
     std::vector<double> width, prec, nfa;  
-	LSD lsd;
+	LineSegmentDetector lsd;
 
     double start = double(getTickCount());
     lsd.detect(image, lines, Rect(), width, prec, nfa); 

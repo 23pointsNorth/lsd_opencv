@@ -38,8 +38,8 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD
 	//
-	// LSD lsd_cv(LSD_NO_REFINE); // Do not refine lines
-	LSD lsd_cv; // Refine founded lines
+	// LineSegmentDetector lsd_cv(LSD_NO_REFINE); // Do not refine lines
+	LineSegmentDetector lsd_cv; // Refine founded lines
 	vector<Vec4i> lines;
 	
     std::vector<double> width, prec, nfa;
@@ -61,8 +61,8 @@ int main(int argc, char** argv)
 	//
 	// Show difference
 	//
-	LSD::showSegments("Drawing segments", image, lines);
-	int d = LSD::showSegments("Segments difference", image.size(), seg_cvo, lines, &image);
+	LineSegmentDetector::showSegments("Drawing segments", image, lines);
+	int d = LineSegmentDetector::showSegments("Segments difference", image.size(), seg_cvo, lines, &image);
 	std::cout << "There are " << d << " not overlapping pixels." << std::endl;
 	waitKey(0); // wait for human action 
 	

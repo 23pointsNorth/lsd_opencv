@@ -15,10 +15,10 @@ void checkConstantColor()
 	Mat constColor(sz, CV_8UC1, Scalar::all(rng.uniform(0, 256)));
 	
 	vector<Vec4i> lines;
-	LSD ls;
+	LineSegmentDetector ls;
 	ls.detect(constColor, lines);
 	
-	LSD::showSegments("checkConstantColor", constColor, lines);
+	LineSegmentDetector::showSegments("checkConstantColor", constColor, lines);
 	
 	std::cout << "Constant Color - Number of lines: " << lines.size() << " - 0 Wanted." << std::endl;
 }
@@ -31,10 +31,10 @@ void checkWhiteNoise()
 	rng.fill(white_noise, RNG::UNIFORM, 0, 256);
 
 	vector<Vec4i> lines;
-	LSD ls;
+	LineSegmentDetector ls;
 	ls.detect(white_noise, lines);
 	
-	LSD::showSegments("checkWhiteNoise", white_noise, lines);
+	LineSegmentDetector::showSegments("checkWhiteNoise", white_noise, lines);
 	
 	std::cout << "White Noise    - Number of lines: " << lines.size() << " - 0 Wanted." << std::endl;
 }
@@ -61,10 +61,10 @@ void checkRotatedRectangle()
 	}
 
 	vector<Vec4i> lines;
-	LSD ls(LSD::REFINE_STD);
+	LineSegmentDetector ls(LSD_REFINE_STD);
 	ls.detect(filledRect, lines);
 	
-	LSD::showSegments("checkRotatedRectangle", filledRect, lines);
+	LineSegmentDetector::showSegments("checkRotatedRectangle", filledRect, lines);
 	
 	std::cout << "Check Rectangle - Number of lines: " << lines.size() << " - >= 4 Wanted." << std::endl;
 }
@@ -84,10 +84,10 @@ void checkLines()
 	}
 
 	vector<Vec4i> lines;
-	LSD ls(LSD::REFINE_ADV);
+	LineSegmentDetector ls(LSD_REFINE_ADV);
 	ls.detect(horzLines, lines);
 	
-	LSD::showSegments("checkLines", horzLines, lines);
+	LineSegmentDetector::showSegments("checkLines", horzLines, lines);
 	
 	std::cout << "Constant Color - Number of lines: " << lines.size() << " - " << numLines * 2 << " Wanted." << std::endl;
 }

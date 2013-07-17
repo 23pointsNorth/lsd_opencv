@@ -55,8 +55,6 @@
 
 #include "lsd_opencv.hpp"
 
-using namespace cv;
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // Default LSD parameters
 // SIGMA_SCALE 0.6    - Sigma for Gaussian filter is computed as sigma = sigma_scale/scale.
@@ -92,13 +90,13 @@ struct edge
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-inline double distSq(const double x1, const double y1, 
+inline double distSq(const double x1, const double y1,
                      const double x2, const double y2)
 {
     return (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
 }
 
-inline double dist(const double x1, const double y1, 
+inline double dist(const double x1, const double y1,
                    const double x2, const double y2)
 {
     return sqrt(distSq(x1, y1, x2, y2));
@@ -175,7 +173,7 @@ inline double log_gamma_lanczos(const double& x)
 
 namespace cv{
 
-LSD::LSD(int _refine, double _scale, double _sigma_scale, double _quant,
+LineSegmentDetector::LineSegmentDetector(int _refine, double _scale, double _sigma_scale, double _quant,
         double _ang_th, double _log_eps, double _density_th, int _n_bins)
         :SCALE(_scale), doRefine(_refine), SIGMA_SCALE(_sigma_scale), QUANT(_quant),
         ANG_TH(_ang_th), LOG_EPS(_log_eps), DENSITY_TH(_density_th), N_BINS(_n_bins)
@@ -185,7 +183,7 @@ LSD::LSD(int _refine, double _scale, double _sigma_scale, double _quant,
               _n_bins > 0);
 }
 
-void LSD::detect(const InputArray _image, OutputArray _lines, Rect _roi,
+void LineSegmentDetector::detect(const InputArray _image, OutputArray _lines, Rect _roi,
                 OutputArray _width, OutputArray _prec, OutputArray _nfa)
 {
     Mat_<double> img = _image.getMat();
@@ -210,8 +208,8 @@ void LSD::detect(const InputArray _image, OutputArray _lines, Rect _roi,
     p_needed = _prec.needed();
     n_needed = _nfa.needed();
 
-    CV_Assert(!_nfa.needed() ||                         // NFA InputArray will be filled _only_ when 
-              _nfa.needed() && doRefine >= REFINE_ADV); // REFINE_ADV type LineSegmentDetector object is created.
+    CV_Assert(!_nfa.needed() ||                              // NFA InputArray will be filled _only_ when
+              _nfa.needed() && doRefine >= LSD_REFINE_ADV);  // REFINE_ADV type LineSegmentDetector object is created.
 
     flsd(lines, w, p, n);
 
@@ -221,9 +219,9 @@ void LSD::detect(const InputArray _image, OutputArray _lines, Rect _roi,
     if(n_needed) Mat(n).copyTo(_nfa);
 }
 
-void LSD::flsd(std::vector<Vec4i>& lines,
-    std::vector<double> widths, std::vector<double> precisions,
-    std::vector<double> nfas)
+void LineSegmentDetector::flsd(std::vector<Vec4i>& lines,
+    std::vector<double>& widths, std::vector<double>& precisions,
+    std::vector<double>& nfas)
 {
     // Angle tolerance
     const double prec = M_PI * ANG_TH / 180;
@@ -277,12 +275,12 @@ void LSD::flsd(std::vector<Vec4i>& lines,
             region2rect(reg, reg_size, reg_angle, prec, p, rec);
 
             double log_nfa = -1;
-            if(doRefine > REFINE_NONE)
+            if(doRefine > LSD_REFINE_NONE)
             {
                 // At least REFINE_STANDARD lvl.
                 if(!refine(reg, reg_size, reg_angle, prec, p, rec, DENSITY_TH)) { continue; }
 
-                if(doRefine >= REFINE_ADV)
+                if(doRefine >= LSD_REFINE_ADV)
                 {
                     // Compute NFA
                     log_nfa = rect_improve(rec);
@@ -314,9 +312,10 @@ void LSD::flsd(std::vector<Vec4i>& lines,
 
             //Store the relevant data
             lines.push_back(Vec4i(int(rec.x1), int(rec.y1), int(rec.x2), int(rec.y2)));
-            if (w_needed) widths.push_back(rec.width);
-            if (p_needed) precisions.push_back(rec.p);
-            if (n_needed && doRefine >= REFINE_ADV) nfas.push_back(log_nfa);
+            if(w_needed) widths.push_back(rec.width);
+            if(p_needed) precisions.push_back(rec.p);
+            if(n_needed && doRefine >= LSD_REFINE_ADV) nfas.push_back(log_nfa);
+
 
             // //Add the linesID to the region on the image
             // for(unsigned int el = 0; el < reg_size; el++)
@@ -327,8 +326,9 @@ void LSD::flsd(std::vector<Vec4i>& lines,
     }
 }
 
-void LSD::ll_angle(const double& threshold, const unsigned int& n_bins, 
-                   std::vector<coorlist>& list)
+void LineSegmentDetector::ll_angle(const double& threshold,
+                                   const unsigned int& n_bins,
+                                   std::vector<coorlist>& list)
 {
     //Initialize data
     angles = Mat_<double>(scaled_image.size());
@@ -425,8 +425,8 @@ void LSD::ll_angle(const double& threshold, const unsigned int& n_bins,
     }
 }
 
-void LSD::region_grow(const Point2i& s, std::vector<RegionPoint>& reg,
-                      int& reg_size, double& reg_angle, const double& prec)
+void LineSegmentDetector::region_grow(const Point2i& s, std::vector<RegionPoint>& reg,
+                                      int& reg_size, double& reg_angle, const double& prec)
 {
     // Point to this region
     reg_size = 1;
@@ -478,8 +478,8 @@ void LSD::region_grow(const Point2i& s, std::vector<RegionPoint>& reg,
     }
 }
 
-void LSD::region2rect(const std::vector<RegionPoint>& reg, const int reg_size, const double reg_angle,
-                      const double prec, const double p, rect& rec) const
+void LineSegmentDetector::region2rect(const std::vector<RegionPoint>& reg, const int reg_size,
+                                      const double reg_angle, const double prec, const double p, rect& rec) const
 {
     double x = 0, y = 0, sum = 0;
     for(int i = 0; i < reg_size; ++i)
@@ -536,8 +536,8 @@ void LSD::region2rect(const std::vector<RegionPoint>& reg, const int reg_size, c
     if(rec.width < 1.0) rec.width = 1.0;
 }
 
-double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, const double& x,
-                      const double& y, const double& reg_angle, const double& prec) const
+double LineSegmentDetector::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, const double& x,
+                                      const double& y, const double& reg_angle, const double& prec) const
 {
     double Ixx = 0.0;
     double Iyy = 0.0;
@@ -574,8 +574,8 @@ double LSD::get_theta(const std::vector<RegionPoint>& reg, const int& reg_size, 
     return theta;
 }
 
-bool LSD::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
-                const double prec, double p, rect& rec, const double& density_th)
+bool LineSegmentDetector::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
+                                 const double prec, double p, rect& rec, const double& density_th)
 {
     double density = double(reg_size) / (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
 
@@ -622,7 +622,7 @@ bool LSD::refine(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
     }
 }
 
-bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
+bool LineSegmentDetector::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, double reg_angle,
                 const double prec, double p, rect& rec, double density, const double& density_th)
 {
     // Compute region's radius
@@ -654,14 +654,14 @@ bool LSD::reduce_region_radius(std::vector<RegionPoint>& reg, int& reg_size, dou
         region2rect(reg, reg_size ,reg_angle, prec, p, rec);
 
         // Re-compute region points density
-        density = double(reg_size) / 
+        density = double(reg_size) /
                   (dist(rec.x1, rec.y1, rec.x2, rec.y2) * rec.width);
     }
 
     return true;
 }
 
-double LSD::rect_improve(rect& rec) const
+double LineSegmentDetector::rect_improve(rect& rec) const
 {
     double delta = 0.5;
     double delta_2 = delta / 2.0;
@@ -765,7 +765,7 @@ double LSD::rect_improve(rect& rec) const
     return log_nfa;
 }
 
-double LSD::rect_nfa(const rect& rec) const
+double LineSegmentDetector::rect_nfa(const rect& rec) const
 {
     int total_pts = 0, alg_pts = 0;
     double half_width = rec.width / 2.0;
@@ -884,7 +884,7 @@ double LSD::rect_nfa(const rect& rec) const
     return nfa(total_pts, alg_pts, rec.p);
 }
 
-double LSD::nfa(const int& n, const int& k, const double& p) const
+double LineSegmentDetector::nfa(const int& n, const int& k, const double& p) const
 {
     // Trivial cases
     if(n == 0 || k == 0) { return -LOG_NT; }
@@ -922,7 +922,7 @@ double LSD::nfa(const int& n, const int& k, const double& p) const
     return -log10(bin_tail) - LOG_NT;
 }
 
-inline bool LSD::isAligned(const int& address, const double& theta, const double& prec) const
+inline bool LineSegmentDetector::isAligned(const int& address, const double& theta, const double& prec) const
 {
     if(address < 0) { return false; }
     const double& a = angles_data[address];
@@ -941,7 +941,7 @@ inline bool LSD::isAligned(const int& address, const double& theta, const double
 }
 
 
-void LSD::drawSegments(Mat& image, const std::vector<Vec4i>& lines)
+void LineSegmentDetector::drawSegments(Mat& image, const std::vector<Vec4i>& lines)
 {
     CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
 
@@ -973,7 +973,7 @@ void LSD::drawSegments(Mat& image, const std::vector<Vec4i>& lines)
 }
 
 
-int LSD::compareSegments(const Size& size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
+int LineSegmentDetector::compareSegments(const Size& size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
 {
     Size sz = size;
     if (image && image->size() != size) sz = image->size();
@@ -1028,17 +1028,17 @@ int LSD::compareSegments(const Size& size, const std::vector<Vec4i>& lines1, con
     return N;
 }
 
-void LSD::showSegments(const std::string& name, const Mat& image, const std::vector<Vec4i>& lines)
+void LineSegmentDetector::showSegments(const std::string& name, const Mat& image, const std::vector<Vec4i>& lines)
 {
     Mat img = image.clone();
     drawSegments(img, lines);
     imshow(name.c_str(), img);
 }
 
-int LSD::showSegments(const std::string& name, Size size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
+int LineSegmentDetector::showSegments(const std::string& name, Size size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image)
 {
     Mat img;
-    if (!image) img = Mat_<uchar>::zeros(size); 
+    if (!image) img = Mat_<uchar>::zeros(size);
     else img = image->clone();
     int n = compareSegments(size, lines1, lines2, &img);
     imshow(name.c_str(), img);
