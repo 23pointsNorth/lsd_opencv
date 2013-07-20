@@ -104,10 +104,6 @@ int main()
 {
 	checkWhiteNoise();
 	checkConstantColor();
-	for (int i = 0; i < 10; ++i)
-	{
-		checkRotatedRectangle();
-	}
 	checkRotatedRectangle();
 	checkLines();
 	cv::waitKey();

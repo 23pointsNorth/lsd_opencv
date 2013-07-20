@@ -466,8 +466,8 @@ void LineSegmentDetectorImpl::detect(const InputArray _image, OutputArray _lines
     p_needed = _prec.needed();
     n_needed = _nfa.needed();
 
-    CV_Assert(!_nfa.needed() ||                              // NFA InputArray will be filled _only_ when
-              _nfa.needed() && doRefine >= LSD_REFINE_ADV);  // REFINE_ADV type LineSegmentDetectorImpl object is created.
+    CV_Assert((!_nfa.needed()) ||                              // NFA InputArray will be filled _only_ when
+              (_nfa.needed() && doRefine >= LSD_REFINE_ADV));  // REFINE_ADV type LineSegmentDetectorImpl object is created.
 
     flsd(lines, w, p, n);
 
@@ -1191,18 +1191,18 @@ inline bool LineSegmentDetectorImpl::isAligned(const int& address, const double&
 }
 
 
-void LineSegmentDetectorImpl::drawSegments(InputOutputArray image, const InputArray lines)
+void LineSegmentDetectorImpl::drawSegments(InputOutputArray _image, const InputArray lines)
 {
-    CV_Assert(!image.empty() && (image.channels() == 1 || image.channels() == 3));
+    CV_Assert(!_image.empty() && (_image.channels() == 1 || _image.channels() == 3));
 
     Mat gray;
-    if (image.channels() == 1)
+    if (_image.channels() == 1)
     {
-        gray = image.getMatRef();
+        gray = _image.getMatRef();
     }
-    else if (image.channels() == 3)
+    else if (_image.channels() == 3)
     {
-        cvtColor(image, gray, CV_BGR2GRAY);
+        cvtColor(_image, gray, CV_BGR2GRAY);
     }
 
     // Create a 3 channel image in order to draw colored lines
@@ -1211,26 +1211,26 @@ void LineSegmentDetectorImpl::drawSegments(InputOutputArray image, const InputAr
     planes.push_back(gray);
     planes.push_back(gray);
 
-    merge(planes, image);
+    merge(planes, _image);
 
     Mat _lines;
     _lines = lines.getMat();
 
     // Draw segments
-    for(unsigned int i = 0; i < _lines.size().width; ++i)
+    for(int i = 0; i < _lines.size().width; ++i)
     {
         const Vec4i& v = _lines.at<Vec4i>(i);
         Point b(v[0], v[1]);
         Point e(v[2], v[3]);
-        line(image.getMatRef(), b, e, Scalar(0, 0, 255), 1);
+        line(_image.getMatRef(), b, e, Scalar(0, 0, 255), 1);
     }
 }
 
 
-int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* image)
+int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* _image)
 {
     Size sz = size;
-    if (image && image->size() != size) sz = image->size();
+    if (_image && _image->size() != size) sz = _image->size();
     CV_Assert(sz.area());
 
     Mat_<uchar> I1 = Mat_<uchar>::zeros(sz);
@@ -1242,13 +1242,13 @@ int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray 
     _lines2 = lines2.getMat();
     // Draw segments
     std::vector<Mat> _lines;
-    for(unsigned int i = 0; i < _lines1.size().width; ++i)
+    for(int i = 0; i < _lines1.size().width; ++i)
     {
         Point b(_lines1.at<Vec4i>(i)[0], _lines1.at<Vec4i>(i)[1]);
         Point e(_lines1.at<Vec4i>(i)[2], _lines1.at<Vec4i>(i)[3]);
         line(I1, b, e, Scalar::all(255), 1);
     }
-    for(unsigned int i = 0; i < _lines2.size().width; ++i)
+    for(int i = 0; i < _lines2.size().width; ++i)
     {
         Point b(_lines2.at<Vec4i>(i)[0], _lines2.at<Vec4i>(i)[1]);
         Point e(_lines2.at<Vec4i>(i)[2], _lines2.at<Vec4i>(i)[3]);
@@ -1260,14 +1260,14 @@ int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray 
     bitwise_xor(I1, I2, Ixor);
     int N = countNonZero(Ixor);
 
-    if (image)
+    if (_image)
     {
         Mat Ig;
-        if (image->channels() == 1)
+        if (_image->channels() == 1)
         {
-            cvtColor(*image, *image, CV_GRAY2BGR);
+            cvtColor(*_image, *_image, CV_GRAY2BGR);
         }
-        CV_Assert(image->isContinuous() && I1.isContinuous() && I2.isContinuous());
+        CV_Assert(_image->isContinuous() && I1.isContinuous() && I2.isContinuous());
 
         for (unsigned int i = 0; i < I1.total(); ++i)
         {
@@ -1275,11 +1275,11 @@ int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray 
             uchar i2 = I2.data[i];
             if (i1 || i2)
             {
-                image->data[3*i + 1] = 0;
-                if (i1) image->data[3*i] = 255;
-                else image->data[3*i] = 0;
-                if (i2) image->data[3*i + 2] = 255;
-                else image->data[3*i + 2] = 0;
+                _image->data[3*i + 1] = 0;
+                if (i1) _image->data[3*i] = 255;
+                else _image->data[3*i] = 0;
+                if (i2) _image->data[3*i + 2] = 255;
+                else _image->data[3*i + 2] = 0;
             }
         }
     }
