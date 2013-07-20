@@ -454,7 +454,6 @@ LineSegmentDetectorImpl::LineSegmentDetectorImpl(int _refine, double _scale, dou
 void LineSegmentDetectorImpl::detect(const InputArray _image, OutputArray _lines,
                 OutputArray _width, OutputArray _prec, OutputArray _nfa)
 {
-    std::cout << "Called detect." << std::endl;
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);
 
@@ -469,7 +468,7 @@ void LineSegmentDetectorImpl::detect(const InputArray _image, OutputArray _lines
 
     CV_Assert(!_nfa.needed() ||                              // NFA InputArray will be filled _only_ when
               _nfa.needed() && doRefine >= LSD_REFINE_ADV);  // REFINE_ADV type LineSegmentDetectorImpl object is created.
-    std::cout << "Calling flasd." << std::endl;
+
     flsd(lines, w, p, n);
 
     Mat(lines).copyTo(_lines);

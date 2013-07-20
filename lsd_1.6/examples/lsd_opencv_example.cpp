@@ -25,10 +25,10 @@ int main(void)
     // LSD call
     std::vector<Vec4i> lines;
     std::vector<double> width, prec, nfa;
-    LineSegmentDetector ls(LSD_REFINE_ADV);
+    LineSegmentDetector* ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
 
     double start = double(getTickCount());
-    ls.detect(img3, lines, width, prec, nfa);
+    ls->detect(img3, lines, width, prec, nfa);
     double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 
     std::cout << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
