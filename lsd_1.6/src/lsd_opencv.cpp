@@ -419,16 +419,27 @@ private:
     bool isAligned(const int& address, const double& theta, const double& prec) const;
 };
 
-////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
-CV_EXPORTS Ptr<LineSegmentDetector> createLineSegmentDetector(
+CV_EXPORTS Ptr<LineSegmentDetector> createLineSegmentDetectorSmrtPtr(
         int _refine, double _scale, double _sigma_scale, double _quant, double _ang_th,
         double _log_eps, double _density_th, int _n_bins)
-                { return new LineSegmentDetectorImpl(
-                        _refine, _scale, _sigma_scale, _quant, _ang_th,
-                        _log_eps, _density_th, _n_bins); }
+{
+    return Ptr<LineSegmentDetector>(new LineSegmentDetectorImpl(
+            _refine, _scale, _sigma_scale, _quant, _ang_th,
+            _log_eps, _density_th, _n_bins));
+}
 
-////////////////////////////////////
+CV_EXPORTS LineSegmentDetector* createLineSegmentDetectorPtr(
+        int _refine, double _scale, double _sigma_scale, double _quant, double _ang_th,
+        double _log_eps, double _density_th, int _n_bins)
+{
+    return new LineSegmentDetectorImpl(
+            _refine, _scale, _sigma_scale, _quant, _ang_th,
+            _log_eps, _density_th, _n_bins);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 
 LineSegmentDetectorImpl::LineSegmentDetectorImpl(int _refine, double _scale, double _sigma_scale, double _quant,
         double _ang_th, double _log_eps, double _density_th, int _n_bins)
@@ -443,6 +454,7 @@ LineSegmentDetectorImpl::LineSegmentDetectorImpl(int _refine, double _scale, dou
 void LineSegmentDetectorImpl::detect(const InputArray _image, OutputArray _lines,
                 OutputArray _width, OutputArray _prec, OutputArray _nfa)
 {
+    std::cout << "Called detect." << std::endl;
     Mat_<double> img = _image.getMat();
     CV_Assert(!img.empty() && img.channels() == 1);
 
@@ -457,7 +469,7 @@ void LineSegmentDetectorImpl::detect(const InputArray _image, OutputArray _lines
 
     CV_Assert(!_nfa.needed() ||                              // NFA InputArray will be filled _only_ when
               _nfa.needed() && doRefine >= LSD_REFINE_ADV);  // REFINE_ADV type LineSegmentDetectorImpl object is created.
-
+    std::cout << "Calling flasd." << std::endl;
     flsd(lines, w, p, n);
 
     Mat(lines).copyTo(_lines);
