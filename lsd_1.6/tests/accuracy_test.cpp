@@ -15,7 +15,7 @@ void checkConstantColor()
 	Mat constColor(sz, CV_8UC1, Scalar::all(rng.uniform(0, 256)));
 
 	vector<Vec4i> lines;
-	LineSegmentDetector* ls = createLineSegmentDetectorPtr();
+	Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr();
 	ls->detect(constColor, lines);
 
     Mat drawnLines = Mat::zeros(constColor.size(), CV_8UC1);
@@ -33,7 +33,7 @@ void checkWhiteNoise()
 	rng.fill(white_noise, RNG::UNIFORM, 0, 256);
 
 	vector<Vec4i> lines;
-	LineSegmentDetector* ls = createLineSegmentDetectorPtr();
+	Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr();
 	ls->detect(white_noise, lines);
 
 	Mat drawnLines = Mat::zeros(white_noise.size(), CV_8UC1);
@@ -65,14 +65,14 @@ void checkRotatedRectangle()
 	}
 
 	vector<Vec4i> lines;
-	LineSegmentDetector* ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
+	Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
 	ls->detect(filledRect, lines);
 
     Mat drawnLines = Mat::zeros(filledRect.size(), CV_8UC1);
     ls->drawSegments(drawnLines, lines);
     imshow("checkRotatedRectangle", drawnLines);
 
-	std::cout << "Check Rectangle - Number of lines: " << lines.size() << " - >= 4 Wanted." << std::endl;
+	std::cout << "Check Rectangle- Number of lines: " << lines.size() << " - >= 4 Wanted." << std::endl;
 }
 
 void checkLines()
@@ -80,24 +80,24 @@ void checkLines()
 	RNG rng(getTickCount());
 	Mat horzLines(sz, CV_8UC1, Scalar::all(rng.uniform(0, 128)));
 
-	const int numLines = 1;
+	const int numLines = 3;
 	for(unsigned int i = 0; i < numLines; ++i)
 	{
 		int y = rng.uniform(10, sz.width - 10);
 		Point p1(y, 10);
 		Point p2(y, sz.height - 10);
-		line(horzLines, p1, p2, Scalar(255), 1);
+		line(horzLines, p1, p2, Scalar(255), 3);
 	}
 
 	vector<Vec4i> lines;
-	LineSegmentDetector* ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
+	Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr(LSD_REFINE_NONE);
 	ls->detect(horzLines, lines);
 
 	Mat drawnLines = Mat::zeros(horzLines.size(), CV_8UC1);
     ls->drawSegments(drawnLines, lines);
     imshow("checkLines", drawnLines);
 
-	std::cout << "Constant Color - Number of lines: " << lines.size() << " - " << numLines * 2 << " Wanted." << std::endl;
+	std::cout << "Lines Check   - Number of lines: " << lines.size() << " - " << numLines * 2 << " Wanted." << std::endl;
 }
 
 int main()
@@ -105,6 +105,10 @@ int main()
 	checkWhiteNoise();
 	checkConstantColor();
 	checkRotatedRectangle();
+	for (int i = 0; i < 10; ++i)
+	{
+		checkLines();
+	}
 	checkLines();
 	cv::waitKey();
 	return 0;

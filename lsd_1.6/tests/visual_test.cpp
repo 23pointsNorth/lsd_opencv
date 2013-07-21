@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	// OpenCV LSD
 	//
 	// LineSegmentDetector lsd_cv(LSD_NO_REFINE); // Do not refine lines
-	LineSegmentDetector* lsd_cv = createLineSegmentDetectorPtr();
+	Ptr<LineSegmentDetector> lsd_cv = createLineSegmentDetectorPtr();
 	vector<Vec4i> lines;
 
     std::vector<double> width, prec, nfa;

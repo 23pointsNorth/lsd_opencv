@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD ADV settings test
 	//
-	LineSegmentDetector* lsd_adv = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
+	Ptr<LineSegmentDetector> lsd_adv = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD STD settings test
 	//
-	LineSegmentDetector* lsd_std = createLineSegmentDetectorPtr(LSD_REFINE_STD);
+	Ptr<LineSegmentDetector> lsd_std = createLineSegmentDetectorPtr(LSD_REFINE_STD);
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 	//
 	// OpenCV LSD NO refinement settings test
 	//
-	LineSegmentDetector* lsd_no = createLineSegmentDetectorPtr(LSD_REFINE_NONE); // Do not refine lines
+	Ptr<LineSegmentDetector> lsd_no = createLineSegmentDetectorPtr(LSD_REFINE_NONE); // Do not refine lines
 	start = double(getTickCount());
 	for(unsigned int i = 0; i < REPEAT_CYCLE; ++i)
 	{

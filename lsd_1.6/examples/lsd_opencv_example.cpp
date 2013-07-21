@@ -25,7 +25,7 @@ int main(void)
     // LSD call
     std::vector<Vec4i> lines;
     std::vector<double> width, prec, nfa;
-    LineSegmentDetector* ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
+    Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr(LSD_REFINE_ADV);
 
     double start = double(getTickCount());
     ls->detect(img3, lines, width, prec, nfa);
@@ -41,6 +41,6 @@ int main(void)
              << " NFA:" << nfa[i] << std::endl;
     }
 
-    waitKey(0);
+    waitKey();
     return 0;
 }

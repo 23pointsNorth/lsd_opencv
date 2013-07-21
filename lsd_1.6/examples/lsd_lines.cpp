@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     Mat image = imread(in, CV_LOAD_IMAGE_GRAYSCALE);
 
     // Create and LSD detector with std refinement.
-    LineSegmentDetector* lsd_std = createLineSegmentDetectorPtr(LSD_REFINE_STD);
+    Ptr<LineSegmentDetector> lsd_std = createLineSegmentDetectorPtr(LSD_REFINE_STD);
     double start = double(getTickCount());
     vector<Vec4i> lines_std;
     lsd_std->detect(image, lines_std);
@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     std::cout << "OpenCV STD (blue) - " << duration_ms << " ms." << std::endl;
 
     // Create an LSD detector with no refinement applied.
-    LineSegmentDetector* lsd_none = createLineSegmentDetectorPtr(LSD_REFINE_NONE);
+    Ptr<LineSegmentDetector> lsd_none = createLineSegmentDetectorPtr(LSD_REFINE_NONE);
     start = double(getTickCount());
     vector<Vec4i> lines_none;
     lsd_none->detect(image, lines_none);
