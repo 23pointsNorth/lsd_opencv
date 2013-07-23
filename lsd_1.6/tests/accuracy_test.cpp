@@ -36,9 +36,9 @@ void checkWhiteNoise()
 	Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr();
 	ls->detect(white_noise, lines);
 
-	Mat drawnLines = Mat::zeros(white_noise.size(), CV_8UC1);
+	Mat drawnLines = white_noise.clone(); //Mat::zeros(white_noise.size(), CV_8UC1);
     ls->drawSegments(drawnLines, lines);
-    imshow("checkRotatedRectangle", drawnLines);
+    imshow("checkWhiteNoise", drawnLines);
 
 	std::cout << "White Noise    - Number of lines: " << lines.size() << " - 0 Wanted." << std::endl;
 }

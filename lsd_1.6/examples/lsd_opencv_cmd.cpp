@@ -25,11 +25,11 @@ int main(int argc, char** argv)
 
 	// LSD call
 	std::vector<Vec4i> lines;
-    std::vector<double> width, prec, nfa;
+    std::vector<double> width, prec;
 	Ptr<LineSegmentDetector> lsd = createLineSegmentDetectorPtr();
 
     double start = double(getTickCount());
-    lsd->detect(image, lines, width, prec, nfa);
+    lsd->detect(image, lines, width, prec);
     double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 
     std::cout << lines.size() <<" line segments found. For " << duration_ms << " ms." << std::endl;
@@ -42,13 +42,11 @@ int main(int argc, char** argv)
 		cout << '\t' << "B: " << lines[i][0] << " " << lines[i][1]
 		<< " E: " << lines[i][2] << " " << lines[i][3]
 		<< " W: " << width[i]
-		<< " P:" << prec[i]
-		<< " NFA:" << nfa[i] << std::endl;
+		<< " P:" << prec[i] << endl;
 		segfile << '\t' << "B: " << lines[i][0] << " " << lines[i][1]
 		<< " E: " << lines[i][2] << " " << lines[i][3]
 		<< " W: " << width[i]
-		<< " P:" << prec[i]
-		<< " NFA:" << nfa[i] << std::endl;
+		<< " P:" << prec[i] << endl;
     }
 	segfile.close();
 
