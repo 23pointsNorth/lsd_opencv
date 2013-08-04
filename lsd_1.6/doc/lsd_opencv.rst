@@ -18,19 +18,27 @@ Creates a smart pointer to a LineSegmentDetector object and initializes it.
 
     :param _refine: The way found lines will be refined:
 
-        * LSD_REFINE_NONE - No refinement applied.
-        * LSD_REFINE_STD  - Standard refinement is applied. E.g. breaking arches into smaller straighter line approximations.
-        * LSD_REFINE_ADV  - Advanced refinement. Number of false alarms is calculated, lines are refined through increase of precision, decrement in size, etc.
+        * **LSD_REFINE_NONE** - No refinement applied.
 
-    :param _scale: The scale of the image that will be used to find the lines. Range (0..1].
-    :param _sigma_scale: Sigma for Gaussian filter. It is computed as sigma = _sigma_scale/_scale.
-    :param _quant: Bound to the quantization error on the gradient norm.
-    :param _ang_th: Gradient angle tolerance in degrees.
-    :param _log_eps: Detection threshold: -log10(NFA) > _log_eps. Used only when advancent refinement is chosen.
-    :param _density_th: Minimal density of aligned region points in the enclosing rectangle.
-    :param _n_bins: Number of bins in pseudo-ordering of gradient modulus.
+        * **LSD_REFINE_STD**  - Standard refinement is applied. E.g. breaking arches into smaller straighter line approximations.
 
-The LineSegmentDetector algorithm is defined using the standard values. Only advanced users may want to edit those, as to tailor it for their application.
+        * **LSD_REFINE_ADV**  - Advanced refinement. Number of false alarms is calculated, lines are refined through increase of precision, decrement in size, etc.
+
+    :param scale: The scale of the image that will be used to find the lines. Range (0..1].
+
+    :param sigma_scale: Sigma for Gaussian filter. It is computed as sigma = _sigma_scale/_scale.
+
+    :param quant: Bound to the quantization error on the gradient norm.
+
+    :param ang_th: Gradient angle tolerance in degrees.
+
+    :param log_eps: Detection threshold: -log10(NFA) > _log_eps. Used only when advancent refinement is chosen.
+
+    :param density_th: Minimal density of aligned region points in the enclosing rectangle.
+
+    :param n_bins: Number of bins in pseudo-ordering of gradient modulus.
+
+The LineSegmentDetector algorithm is defined using the standard values. Only advanced users may want to edit those, as to tailor it for their own application.
 
 
 LineSegmentDetector::detect
@@ -44,16 +52,19 @@ Finds lines in the input image. See the lsd_lines.cpp sample for possible usage.
         lsd_ptr->detect(image(roi), lines, ...);
         lines += Scalar(roi.x, roi.y, roi.x, roi.y);
 
-    :param _lines A vector of Vec4i elements specifying the beginning and ending point of a line. Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end. Returned lines are strictly oriented depending on the gradient.
-    :param width Vector of widths of the regions, where the lines are found. E.g. Width of line.
-    :param prec Vector of precisions with which the lines are found.
-    :param nfa Vector containing number of false alarms in the line region, with precision of 10%. The bigger the value, logarithmically better the detection.
+    :param lines: A vector of Vec4i elements specifying the beginning and ending point of a line. Where Vec4i is (x1, y1, x2, y2), point 1 is the start, point 2 - end. Returned lines are strictly oriented depending on the gradient.
+
+    :param width: Vector of widths of the regions, where the lines are found. E.g. Width of line.
+
+    :param prec: Vector of precisions with which the lines are found.
+
+    :param nfa: Vector containing number of false alarms in the line region, with precision of 10%. The bigger the value, logarithmically better the detection.
 
         * -1 corresponds to 10 mean false alarms
         * 0 corresponds to 1 mean false alarm
         * 1 corresponds to 0.1 mean false alarms
 
-    This vector will be calculated only when the objects type is REFINE_ADV.
+    This vector will be calculated only when the objects type is LSD_REFINE_ADV.
 
 
 LineSegmentDetector::drawSegments
@@ -62,8 +73,9 @@ Draws the line segments on a given image.
 
 .. ocv:function:: void drawSegments(InputOutputArray image, const InputArray lines)
 
-    :param image The image, where the liens will be drawn. Should be bigger or equal to the image, where the lines were found.
-    :param lines A vector of the lines that needed to be drawn.
+    :param image: The image, where the liens will be drawn. Should be bigger or equal to the image, where the lines were found.
+
+    :param lines: A vector of the lines that needed to be drawn.
 
 
 LineSegmentDetector::compareSegments
@@ -72,10 +84,10 @@ Draws two groups of lines in blue and red, counting the non overlapping (mismatc
 
 .. ocv:function:: int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* image = 0)
 
-    :param size The size of the image, where the lines were found.
-    :param lines1 The first group of lines that needs to be drawn. It is visualized in blue color.
-    :param lines2 The second group of lines. They visualized in red color.
-    :param image Optional image, where the lines will be drawn. The image is converted to grayscale before displaying, leaving lines1 and lines2 in the above mentioned colors.
+    :param size: The size of the image, where the lines were found.
+    :param lines1: The first group of lines that needs to be drawn. It is visualized in blue color.
+    :param lines2: The second group of lines. They visualized in red color.
+    :param image: Optional image, where the lines will be drawn. The image is converted to grayscale before displaying, leaving lines1 and lines2 in the above mentioned colors.
 
 
 .. [Rafael12] Rafael Grompone von Gioi, Jérémie Jakubowicz, Jean-Michel Morel, and Gregory Randall, LSD: a Line Segment Detector, Image Processing On Line, vol. 2012. http://dx.doi.org/10.5201/ipol.2012.gjmr-lsd
