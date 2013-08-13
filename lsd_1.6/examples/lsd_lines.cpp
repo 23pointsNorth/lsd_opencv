@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     std::cout << "Overlapping pixels are shown in purple." << std::endl;
 
     Mat difference = Mat::zeros(image.size(), CV_8UC1);
-    lsd_none->compareSegments(image.size(), lines_std, lines_none, &difference);
+    lsd_none->compareSegments(image.size(), lines_std, lines_none, difference);
     imshow("Line difference", difference);
 
     Mat drawnLines(image);

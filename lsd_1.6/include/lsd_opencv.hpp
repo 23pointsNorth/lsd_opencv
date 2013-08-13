@@ -87,7 +87,7 @@ public:
  *                  Should have the size of the image, where the lines were found
  * @param lines     The lines that need to be drawn
  */
-    virtual void drawSegments(InputOutputArray image, const InputArray lines) = 0;
+    virtual void drawSegments(InputOutputArray _image, const InputArray lines) = 0;
 
 /**
  * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
@@ -98,7 +98,7 @@ public:
  * @param lines2    The second lines that need to be drawn. Color - Red.
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
-    virtual int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, Mat* image = 0) = 0;
+    virtual int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, InputOutputArray _image = noArray()) = 0;
 
     virtual ~LineSegmentDetector() {};
 };
