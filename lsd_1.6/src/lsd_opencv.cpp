@@ -1400,7 +1400,6 @@ int LineSegmentDetectorImpl::filterSize(const InputArray lines, OutputArray filt
         Point e(v[2], v[3]);
 
         float len = norm(b - e);
-        std::cout << len << " ";
         if (((min_length == LSD_NO_SIZE_LIMIT) || (len >= min_length)) &&
             ((max_length == LSD_NO_SIZE_LIMIT) || (len < max_length)))
             f.push_back(v);
