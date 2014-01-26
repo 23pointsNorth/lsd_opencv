@@ -7,11 +7,10 @@
 using namespace std;
 using namespace cv;
 
-#define IMAGE_WIDTH     1280
-#define IMAGE_HEIGHT    720
-
 const float ANGLE = 15;
 const float RANGE = 10;
+
+const float MIN_LEN = 30;
 
 int main(int argc, char *argv[])
 {
@@ -29,17 +28,18 @@ int main(int argc, char *argv[])
     //
     // LSD call
     //
-    std::vector<Vec4i> lines, filtered_lines, retained_lines;
+    std::vector<Vec4i> lines, filtered_lines, retained_lines, long_lines;
     std::vector<double> width, prec, nfa;
     Ptr<LineSegmentDetector> ls = createLineSegmentDetectorPtr(LSD_REFINE_STD);
 
     double start = double(getTickCount());
     ls->detect(image, lines);
-    ls->filterOutAngle(lines,filtered_lines, ANGLE, RANGE); // remove all vertical lines
-    ls->retainAngle(lines, retained_lines, ANGLE, RANGE); // take all vertical lines
+    ls->filterSize(lines, lines, MIN_LEN, LSD_NO_SIZE_LIMIT);    // Remove all lines smaller than MIN_LEN pixels
+    ls->filterOutAngle(lines,filtered_lines, ANGLE, RANGE);     // remove all vertical lines
+    ls->retainAngle(lines, retained_lines, ANGLE, RANGE);       // take all vertical lines
     double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 
-
+    cout << "It took " << duration_ms << " ms." << endl;
 
     //
     // Show difference

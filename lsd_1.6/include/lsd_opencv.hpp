@@ -47,9 +47,12 @@
 
 namespace cv {
 
-enum {LSD_REFINE_NONE = 0,
-      LSD_REFINE_STD  = 1,
-      LSD_REFINE_ADV  = 2
+enum {LSD_NO_SIZE_LIMIT = -1,
+      LSD_REFINE_NONE   = 0,
+      LSD_REFINE_STD    = 1,
+      LSD_REFINE_ADV    = 2,
+
+
 };
 
 class LineSegmentDetector : public Algorithm
@@ -111,7 +114,7 @@ public:
  *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1) = 0;
+    virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f) = 0;
 
 /**
  * Find all line elements that *are* fullfilling the angle and range requirenmnets.
@@ -124,7 +127,20 @@ public:
  *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    virtual int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1) = 0;
+    virtual int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f) = 0;
+
+/**
+ * Find all line elements that *are* fullfilling the size requirenmnets.
+ * Lines which are shorter than max_length and longer or equal to min_length
+ *
+ * @param lines         Input lines.
+ * @param filtered      The output vector of lines containing those fulfilling the requirement.
+ * @param max_length    Maximum length of the line segment. (Exclusive)
+ * @param min_length    Minimum length of the line segment. (Inclusive)
+ * @return              Returns the number of line segments not included in the output vector.
+ */
+    virtual int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT) = 0;
+
 
     virtual ~LineSegmentDetector() {};
 };

@@ -275,7 +275,7 @@ public:
  *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1);
+    int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f);
 
 /**
  * Find all line elements that *are* fullfilling the angle and range requirenmnets.
@@ -288,7 +288,19 @@ public:
  *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1);
+    int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f);
+
+/**
+ * Find all line elements that *are* fullfilling the size requirenmnets.
+ * Lines which are shorter than max_length and longer than min_length
+ *
+ * @param lines         Input lines.
+ * @param filtered      The output vector of lines containing those fulfilling the requirement.
+ * @param max_length    Maximum length of the line segment.
+ * @param min_length    Minimum length of the line segment.
+ * @return              Returns the number of line segments not included in the output vector.
+ */
+    int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT);
 
 private:
     Mat image;
@@ -1366,6 +1378,31 @@ int LineSegmentDetectorImpl::retainAngle(const InputArray lines, OutputArray fil
         if (angle > 180) angle -= 180.f;
         angle = 180.f - angle;          // rotate to what the user would expect;
         if (fabs(angle - filter_angle) < half_range)
+            f.push_back(v);
+        else
+            ++num_filtered;
+    }
+    Mat(f).copyTo(filtered);
+    return num_filtered;
+}
+
+int LineSegmentDetectorImpl::filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length)
+{
+    int num_filtered = 0;
+    std::vector<Vec4i> f;
+    Mat _lines = lines.getMat();
+
+    // Draw segments
+    for(int i = 0; i < _lines.size().width; ++i)
+    {
+        const Vec4i& v = _lines.at<Vec4i>(i);
+        Point b(v[0], v[1]);
+        Point e(v[2], v[3]);
+
+        float len = norm(b - e);
+        std::cout << len << " ";
+        if (((min_length == LSD_NO_SIZE_LIMIT) || (len >= min_length)) &&
+            ((max_length == LSD_NO_SIZE_LIMIT) || (len < max_length)))
             f.push_back(v);
         else
             ++num_filtered;
