@@ -265,7 +265,7 @@ public:
     int showSegments(const std::string& name, Size size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image = 0);
 
 /**
- * Return all line elements that are not fullfilling the angle and range requirenmnets.
+ * Find all line elements that are not fullfilling the angle and range requirenmnets.
  * angle(segment) outside *filter_angle* +/- range.
  *
  * @param lines         Input lines.
@@ -275,7 +275,20 @@ public:
  *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0);
+    int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1);
+
+/**
+ * Find all line elements that *are* fullfilling the angle and range requirenmnets.
+ * angle(segment) within *filter_angle* +/- range. The opposite of the filterOutAngle method.
+ *
+ * @param lines         Input lines.
+ * @param filtered      The output vector of lines containing those fulfilling the requirement.
+ * @param filter_angle  Main angle for filtering in degrees. Range should be [0 .. 180].
+ * @param half_range    Gives the range around the filter_angle.
+ *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
+ * @return              Returns the number of line segments not included in the output vector.
+ */
+    int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 1);
 
 private:
     Mat image;
@@ -1322,10 +1335,37 @@ int LineSegmentDetectorImpl::filterOutAngle(const InputArray lines, OutputArray 
         Point b(v[0], v[1]);
         Point e(v[2], v[3]);
 
-        Point dv = b - e;
+        Point dv = e - b;
         float angle = fastAtan2(dv.y, dv.x);
-        if (angle > 180) angle -= 180;
+        if (angle > 180) angle -= 180.f;
+        angle = 180.f - angle;          // rotate to what the user would expect;
         if (fabs(angle - filter_angle) >= half_range)
+            f.push_back(v);
+        else
+            ++num_filtered;
+    }
+    Mat(f).copyTo(filtered);
+    return num_filtered;
+}
+
+int LineSegmentDetectorImpl::retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range)
+{
+    int num_filtered = 0;
+    std::vector<Vec4i> f;
+    Mat _lines = lines.getMat();
+
+    // Draw segments
+    for(int i = 0; i < _lines.size().width; ++i)
+    {
+        const Vec4i& v = _lines.at<Vec4i>(i);
+        Point b(v[0], v[1]);
+        Point e(v[2], v[3]);
+
+        Point dv = e - b;
+        float angle = fastAtan2(dv.y, dv.x);
+        if (angle > 180) angle -= 180.f;
+        angle = 180.f - angle;          // rotate to what the user would expect;
+        if (fabs(angle - filter_angle) < half_range)
             f.push_back(v);
         else
             ++num_filtered;
