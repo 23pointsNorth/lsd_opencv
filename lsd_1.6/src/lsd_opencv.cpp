@@ -264,6 +264,19 @@ public:
  */
     int showSegments(const std::string& name, Size size, const std::vector<Vec4i>& lines1, const std::vector<Vec4i> lines2, Mat* image = 0);
 
+/**
+ * Return all line elements that are not fullfilling the angle and range requirenmnets.
+ * angle(segment) outside *filter_angle* +/- range.
+ *
+ * @param lines         Input lines.
+ * @param filtered      The output vector of lines not containing those fulfilling the requirement.
+ * @param filter_angle  Main angle for filtering in degrees. Range should be [0 .. 180].
+ * @param half_range    Gives the range around the filter_angle.
+ *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
+ * @return              Returns the number of line segments not included in the output vector.
+ */
+    int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0);
+
 private:
     Mat image;
     Mat_<double> scaled_image;
@@ -371,7 +384,7 @@ private:
  * @param rec       Return: The generated rectangle.
  */
     void region2rect(const std::vector<RegionPoint>& reg, const int reg_size, const double reg_angle,
-                    const double prec, const double p, rect& rec) const;
+                     const double prec, const double p, rect& rec) const;
 
 /**
  * Compute region's angle as the principal inertia axis of the region.
@@ -1256,12 +1269,9 @@ int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray 
 
     if (_image.needed())
     {
-        Mat Ig;
-        if (_image.channels() == 1)
-        {
-            cvtColor(_image, _image, CV_GRAY2BGR);
-        }
-        CV_Assert(_image.getMatRef().isContinuous() && I1.isContinuous() && I2.isContinuous());
+        CV_Assert(_image.channels() == 3);
+        Mat img = _image.getMatRef();
+        CV_Assert(img.isContinuous() && I1.isContinuous() && I2.isContinuous());
 
         for (unsigned int i = 0; i < I1.total(); ++i)
         {
@@ -1269,11 +1279,12 @@ int LineSegmentDetectorImpl::compareSegments(const Size& size, const InputArray 
             uchar i2 = I2.data[i];
             if (i1 || i2)
             {
-                _image.getMatRef().data[3*i + 1] = 0;
-                if (i1) _image.getMatRef().data[3*i] = 255;
-                else _image.getMatRef().data[3*i] = 0;
-                if (i2) _image.getMatRef().data[3*i + 2] = 255;
-                else _image.getMatRef().data[3*i + 2] = 0;
+                unsigned int base_idx = i * 3;
+                if (i1) img.data[base_idx] = 255;
+                else img.data[base_idx] = 0;
+                img.data[base_idx + 1] = 0;
+                if (i2) img.data[base_idx + 2] = 255;
+                else img.data[base_idx + 2] = 0;
             }
         }
     }
@@ -1296,6 +1307,31 @@ int LineSegmentDetectorImpl::showSegments(const std::string& name, Size size, co
     int n = compareSegments(size, lines1, lines2, img);
     imshow(name.c_str(), img);
     return n;
+}
+
+int LineSegmentDetectorImpl::filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range)
+{
+    int num_filtered = 0;
+    std::vector<Vec4i> f;
+    Mat _lines = lines.getMat();
+
+    // Draw segments
+    for(int i = 0; i < _lines.size().width; ++i)
+    {
+        const Vec4i& v = _lines.at<Vec4i>(i);
+        Point b(v[0], v[1]);
+        Point e(v[2], v[3]);
+
+        Point dv = b - e;
+        float angle = fastAtan2(dv.y, dv.x);
+        if (angle > 180) angle -= 180;
+        if (fabs(angle - filter_angle) >= half_range)
+            f.push_back(v);
+        else
+            ++num_filtered;
+    }
+    Mat(f).copyTo(filtered);
+    return num_filtered;
 }
 
 } // namespace cv

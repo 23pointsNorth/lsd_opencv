@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 	lsd_cv->drawSegments(drawnLines, lines);
 	imshow("Drawing segments", drawnLines);
 
-	Mat difference = Mat::zeros(image.size(), CV_8UC1);
+	Mat difference = Mat::zeros(image.size(), CV_8UC3);
 	int d = lsd_cv->compareSegments(image.size(), seg_cvo, lines, difference);
 	imshow("Segments difference", difference);
 	std::cout << "There are " << d << " not overlapping pixels." << std::endl;

@@ -23,3 +23,6 @@ target_link_libraries(lsd_opencv_cmd lsd_opencv ${OpenCV_LIBS})
 
 add_executable(lsd_lines lsd_lines.cpp)
 target_link_libraries(lsd_lines lsd_opencv ${OpenCV_LIBS})
+
+add_executable(lsd_filter lsd_filterAngle.cpp)
+target_link_libraries(lsd_filter lsd_opencv ${OpenCV_LIBS})

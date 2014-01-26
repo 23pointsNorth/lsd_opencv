@@ -93,12 +93,25 @@ public:
  * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
  *
  * @param image     The image, where lines will be drawn.
- *                  Should have the size of the image, where the lines were found
+ *                  Should have the size of the image, where the lines were found.
  * @param lines1    The first lines that need to be drawn. Color - Blue.
  * @param lines2    The second lines that need to be drawn. Color - Red.
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
     virtual int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, InputOutputArray _image = noArray()) = 0;
+
+/**
+ * Return all line elements that are not fullfilling the angle and range requirenmnets.
+ * angle(segment) outside *filter_angle* +/- range.
+ *
+ * @param lines         Input lines.
+ * @param filtered      The output vector of lines not containing those fulfilling the requirement.
+ * @param filter_angle  Main angle for filtering in degrees. Range should be [0 .. 180].
+ * @param half_range    Gives the range around the filter_angle.
+ *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
+ * @return              Returns the number of line segments not included in the output vector.
+ */
+    virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0) = 0;
 
     virtual ~LineSegmentDetector() {};
 };
