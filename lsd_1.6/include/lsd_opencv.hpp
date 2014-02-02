@@ -104,43 +104,52 @@ public:
     virtual int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, InputOutputArray _image = noArray()) = 0;
 
 /**
- * Find all line elements that are not fullfilling the angle and range requirenmnets.
- * angle(segment) outside *filter_angle* +/- range.
+ * Find all line elements that are *not* fullfilling the angle and range requirenmnets.
+ * Take all lines, whose angle(line_segment) is outside [min_angle, max_angle] range.
  *
  * @param lines         Input lines.
  * @param filtered      The output vector of lines not containing those fulfilling the requirement.
- * @param filter_angle  Main angle for filtering in degrees. Range should be [0 .. 180].
- * @param half_range    Gives the range around the filter_angle.
- *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
+ * @param min_angle     The min angle to be considered in degrees. Should be in range [0..180].
+ * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f) = 0;
+    CV_WRAP virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
 
 /**
- * Find all line elements that *are* fullfilling the angle and range requirenmnets.
- * angle(segment) within *filter_angle* +/- range. The opposite of the filterOutAngle method.
+ * Find all line elements that are fullfilling the angle and range requirenmnets.
+ * Take all lines, whose angle(line_segment) is inside [min_angle, max_angle] range.
+ * The opposite of the filterOutAngle method.
  *
  * @param lines         Input lines.
- * @param filtered      The output vector of lines containing those fulfilling the requirement.
- * @param filter_angle  Main angle for filtering in degrees. Range should be [0 .. 180].
- * @param half_range    Gives the range around the filter_angle.
- *                      Considered angles are [filter_angle - half_range, filter_angle + half_range].
+ * @param filtered      The output vector of lines not containing those fulfilling the requirement.
+ * @param min_angle     The min angle to be considered in degrees. Should be in range [0..180].
+ * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    virtual int retainAngle(const InputArray lines, OutputArray filtered, float filter_angle, float half_range = 0.3f) = 0;
+    CV_WRAP virtual int retainAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
 
 /**
  * Find all line elements that *are* fullfilling the size requirenmnets.
- * Lines which are shorter than max_length and longer or equal to min_length
+ * Lines which are shorter than max_length and longer than min_length.
  *
  * @param lines         Input lines.
  * @param filtered      The output vector of lines containing those fulfilling the requirement.
- * @param max_length    Maximum length of the line segment. (Exclusive)
- * @param min_length    Minimum length of the line segment. (Inclusive)
+ * @param max_length    Maximum length of the line segment.
+ * @param min_length    Minimum length of the line segment.
  * @return              Returns the number of line segments not included in the output vector.
  */
-    virtual int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT) = 0;
+    CV_WRAP virtual int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT) = 0;
 
+/*
+ * Find itnersection point of 2 lines.
+ *
+ * @param line1         First line in format Vec4i(x1, y1, x2, y2).
+ * @param line2         Second line in the same format as line1.
+ * @param P             The point where line1 and line2 intersect.
+ * @return              The value in variable P is only valid when the return value is true.
+ *                      Otherwise, the lines are parallel and the value can be ignored.
+ */
+    CV_WRAP virtual bool intersection(const InputArray line1, const InputArray line2, Point& P) = 0;
 
     virtual ~LineSegmentDetector() {};
 };
