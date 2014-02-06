@@ -79,7 +79,7 @@ public:
  *                              * 1 corresponds to 0.1 mean false alarms
  *                          This vector will be calculated _only_ when the objects type is REFINE_ADV
  */
-    virtual void detect(const InputArray _image, OutputArray _lines,
+    virtual void detect(InputArray _image, OutputArray _lines,
                         OutputArray width = noArray(), OutputArray prec = noArray(),
                         OutputArray nfa = noArray()) = 0;
 
@@ -90,7 +90,7 @@ public:
  *                  Should have the size of the image, where the lines were found
  * @param lines     The lines that need to be drawn
  */
-    virtual void drawSegments(InputOutputArray _image, const InputArray lines) = 0;
+    virtual void drawSegments(InputOutputArray _image, InputArray lines) = 0;
 
 /**
  * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
@@ -101,7 +101,7 @@ public:
  * @param lines2    The second lines that need to be drawn. Color - Red.
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
-    virtual int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, InputOutputArray _image = noArray()) = 0;
+    virtual int compareSegments(const Size& size, InputArray lines1, InputArray lines2, InputOutputArray _image = noArray()) = 0;
 
 /**
  * Find all line elements that are *not* fullfilling the angle and range requirenmnets.
@@ -113,7 +113,7 @@ public:
  * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    CV_WRAP virtual int filterOutAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
+    CV_WRAP virtual int filterOutAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
 
 /**
  * Find all line elements that are fullfilling the angle and range requirenmnets.
@@ -126,7 +126,7 @@ public:
  * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    CV_WRAP virtual int retainAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
+    CV_WRAP virtual int retainAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle) = 0;
 
 /**
  * Find all line elements that *are* fullfilling the size requirenmnets.
@@ -138,7 +138,7 @@ public:
  * @param min_length    Minimum length of the line segment.
  * @return              Returns the number of line segments not included in the output vector.
  */
-    CV_WRAP virtual int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT) = 0;
+    CV_WRAP virtual int filterSize(InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT) = 0;
 
 /*
  * Find itnersection point of 2 lines.
@@ -149,7 +149,7 @@ public:
  * @return              The value in variable P is only valid when the return value is true.
  *                      Otherwise, the lines are parallel and the value can be ignored.
  */
-    CV_WRAP virtual bool intersection(const InputArray line1, const InputArray line2, Point& P) = 0;
+    CV_WRAP virtual bool intersection(InputArray line1, InputArray line2, Point& P) = 0;
 
     virtual ~LineSegmentDetector() {};
 };

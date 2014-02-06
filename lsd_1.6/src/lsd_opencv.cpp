@@ -218,7 +218,7 @@ public:
  *                              * 1 corresponds to 0.1 mean false alarms
  *                          This vector will be calculated _only_ when the objects type is REFINE_ADV
  */
-    void detect(const InputArray _image, OutputArray _lines,
+    void detect(InputArray _image, OutputArray _lines,
                 OutputArray width = noArray(), OutputArray prec = noArray(),
                 OutputArray nfa = noArray());
 
@@ -229,7 +229,7 @@ public:
  *                  Should have the size of the image, where the lines were found
  * @param lines     The lines that need to be drawn
  */
-    void drawSegments(InputOutputArray _image, const InputArray lines);
+    void drawSegments(InputOutputArray _image, InputArray lines);
 
 /**
  * Draw both vectors on the image canvas. Uses blue for lines 1 and red for lines 2.
@@ -241,7 +241,7 @@ public:
  *                  Should have the size of the image, where the lines were found
  * @return          The number of mismatching pixels between lines1 and lines2.
  */
-    int compareSegments(const Size& size, const InputArray lines1, const InputArray lines2, InputOutputArray _image = noArray());
+    int compareSegments(const Size& size, InputArray lines1, InputArray lines2, InputOutputArray _image = noArray());
 
 /*
  * Shows the lines in a window.
@@ -274,7 +274,7 @@ public:
  * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int filterOutAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle);
+    int filterOutAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle);
 
 /**
  * Find all line elements that are fullfilling the angle and range requirenmnets.
@@ -287,7 +287,7 @@ public:
  * @param max_angle     The max angle to be considered in degrees. Should be >= min_angle and widthin range [0..180].
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int retainAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle);
+    int retainAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle);
 
 /**
  * Find all line elements that *are* fullfilling the size requirenmnets.
@@ -299,7 +299,7 @@ public:
  * @param min_length    Minimum length of the line segment.
  * @return              Returns the number of line segments not included in the output vector.
  */
-    int filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT);
+    int filterSize(InputArray lines, OutputArray filtered, float min_length, float max_length = LSD_NO_SIZE_LIMIT);
 
 /*
  * Find itnersection point of 2 lines.
@@ -310,7 +310,7 @@ public:
  * @return              The value in variable P is only valid when the return value is true.
  *                      Otherwise, the lines are parallel and the value can be ignored.
  */
-    bool intersection(const InputArray line1, const InputArray line2, Point& P);
+    bool intersection(InputArray line1, InputArray line2, Point& P);
 
 private:
     Mat image;
@@ -476,7 +476,7 @@ private:
 /**
  * A helper funciton for filterOutAngle and retainAngle.
  */
-    int angle_filtering(const InputArray lines, OutputArray filtered, float min_angle, float max_angle, int retain_type) const;
+    int angle_filtering(InputArray lines, OutputArray filtered, float min_angle, float max_angle, int retain_type) const;
 
 /*
  * Finds the equation parameters of a line in the form of Ax + By = C.
@@ -1359,7 +1359,7 @@ int LineSegmentDetectorImpl::showSegments(const std::string& name, Size size, co
     return n;
 }
 
-int LineSegmentDetectorImpl::angle_filtering(const InputArray lines, OutputArray filtered, float min_angle, float max_angle, int retain_type) const
+int LineSegmentDetectorImpl::angle_filtering(InputArray lines, OutputArray filtered, float min_angle, float max_angle, int retain_type) const
 {
     int num_filtered = 0;
     std::vector<Vec4i> f;
@@ -1371,7 +1371,7 @@ int LineSegmentDetectorImpl::angle_filtering(const InputArray lines, OutputArray
         Point b(v[0], v[1]);
         Point e(v[2], v[3]);
 
-        Point dv = e - b;
+        Point2f dv = e - b;
         float angle = fastAtan2(dv.y, dv.x); // returns in range [0..360]
         if (angle >= 180) angle -= 180.f;
 
@@ -1386,23 +1386,22 @@ int LineSegmentDetectorImpl::angle_filtering(const InputArray lines, OutputArray
     return num_filtered;
 }
 
-int LineSegmentDetectorImpl::filterOutAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle)
+int LineSegmentDetectorImpl::filterOutAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle)
 {
     return angle_filtering(lines, filtered, min_angle, max_angle, RETAIN_OUT);
 }
 
-int LineSegmentDetectorImpl::retainAngle(const InputArray lines, OutputArray filtered, float min_angle, float max_angle)
+int LineSegmentDetectorImpl::retainAngle(InputArray lines, OutputArray filtered, float min_angle, float max_angle)
 {
     return angle_filtering(lines, filtered, min_angle, max_angle, RETAIN_IN);
 }
 
-int LineSegmentDetectorImpl::filterSize(const InputArray lines, OutputArray filtered, float min_length, float max_length)
+int LineSegmentDetectorImpl::filterSize(InputArray lines, OutputArray filtered, float min_length, float max_length)
 {
     int num_filtered = 0;
     std::vector<Vec4i> f;
     Mat _lines = lines.getMat();
 
-    // Draw segments
     for(int i = 0; i < _lines.size().width; ++i)
     {
         const Vec4i& v = _lines.at<Vec4i>(i);
@@ -1427,8 +1426,10 @@ void LineSegmentDetectorImpl::find_eq_params(const Vec4i& line, float& a, float&
     c = a * line[0] + b * line[1];
 }
 
-bool LineSegmentDetectorImpl::intersection(const InputArray line1, const InputArray line2, Point& P)
+bool LineSegmentDetectorImpl::intersection(InputArray line1, InputArray line2, Point& P)
 {
+    CV_Assert(!line1.empty() && !line2.empty());
+
     Vec4i l1 = line1.getMat().at<Vec4i>(0);
     Vec4i l2 = line2.getMat().at<Vec4i>(0);
 
